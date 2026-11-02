@@ -1,0 +1,31 @@
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --redact -v
+    ruff-check:
+      glob: "*.py"
+      run: ruff check --fix {staged_files}
+    ruff-format:
+      glob: "*.py"
+      run: ruff format {staged_files}
+    nbstripout:
+      glob: "*.ipynb"
+      run: nbstripout {staged_files}
+    large-files:
+      run: sh .githooks/check-large-files.sh
+
+commit-msg:
+  commands:
+    strip-ai-trailers:
+      run: sh .githooks/commit-msg {1}
+
+pre-push:
+  parallel: false
+  commands:
+    pyright:
+      run: pyright src
+    deptry:
+      run: deptry src
+    pytest:
+      run: pytest -m "not slow"

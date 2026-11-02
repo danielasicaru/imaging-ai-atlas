@@ -1,0 +1,14 @@
+#!/bin/sh
+# Strips AI-attribution trailers from commit messages. See README "Repository conventions".
+set -eu
+
+msg_file="$1"
+
+sed -E -i \
+    -e '/^[Cc]o-[Aa]uthored-[Bb]y:/d' \
+    -e '/[Gg]enerated (with|by)/d' \
+    -e '/🤖/d' \
+    "$msg_file"
+
+# collapse any blank lines left behind at the end of the file
+sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$msg_file"
