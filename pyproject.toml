@@ -95,13 +95,24 @@ source = ["imaging_ai_atlas"]
 [tool.coverage.report]
 fail_under = 80
 skip_covered = true
+exclude_lines = ["if __name__ == .__main__.:"]
 
 # ---------------------------------------------------------------- dependency and dead-code hygiene
 [tool.deptry]
 known_first_party = ["imaging_ai_atlas"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["pyarrow", "dvc"]   # used by pandas parquet I/O and the DVC CLI, never imported directly
+# DEP002 ("defined but unused"): pyarrow/dvc are CLI tools, never imported directly.
+# The rest are declared ahead of the milestone that imports them (M1 pandas/pyyaml/pydantic,
+# M3 torch/sentence-transformers, M4 bertopic/umap-learn/hdbscan/scikit-learn, M5 mlflow, M6 plotly)
+# and the dev extras aren't imported by src/ at all. Shrink this list as each stage lands.
+DEP002 = [
+    "pyarrow", "dvc",
+    "pandas", "pyyaml", "pydantic", "torch", "sentence-transformers", "bertopic",
+    "umap-learn", "hdbscan", "scikit-learn", "mlflow", "plotly",
+    "pytest", "pytest-cov", "ruff", "pyright", "deptry", "vulture", "nbstripout",
+    "pip-tools", "lefthook",
+]
 
 [tool.vulture]
 paths = ["src"]

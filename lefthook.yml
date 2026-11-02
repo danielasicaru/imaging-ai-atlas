@@ -28,4 +28,4 @@ pre-push:
     deptry:
       run: deptry src
     pytest:
-      run: pytest -m "not slow"
+      run: pytest -m 'not slow'
