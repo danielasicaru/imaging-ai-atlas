@@ -48,9 +48,6 @@ flowchart LR
 
 ## Repository conventions
 
-- Commits are authored by Daniela Sicaru. This repo does not carry co-author or "generated with" trailers
-  from AI tooling used during development — the `commit-msg` hook (`.githooks/commit-msg`) strips any such
-  lines as a backstop.
 - No raw data is committed. `data/` is git-ignored; datasets are versioned with DVC and documented in each
   stage's ADR.
 - Decisions with lasting consequences are recorded as ADRs under `docs/decisions/`.
