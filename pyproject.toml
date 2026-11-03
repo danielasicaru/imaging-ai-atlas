@@ -14,7 +14,7 @@ dependencies = [
     "pydantic>=2.6",          # config validation (plain YAML + pydantic; revisit if Hydra is chosen)
     "typer>=0.12",            # per-stage CLI
     # embeddings and topics
-    "torch==2.14.1",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
+    "torch==2.15.0",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
                                # [tool.uv.sources]/[tool.uv.index] below) — both must resolve the same version
     "sentence-transformers>=3.0",
     "bertopic>=0.16",
