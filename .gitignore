@@ -9,6 +9,8 @@ htmlcov/
 build/
 dist/
 .venv/
-/data/
+/data/**
+!/data/**/
+!/data/**/*.dvc
 mlflow.db
 mlruns/

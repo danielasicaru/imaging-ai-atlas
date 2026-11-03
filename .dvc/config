@@ -1,0 +1,5 @@
+[core]
+    analytics = false
+    remote = local-remote
+['remote "local-remote"']
+    url = D:/dvc-remote
