@@ -14,8 +14,8 @@ dependencies = [
     "pydantic>=2.6",          # config validation (plain YAML + pydantic; revisit if Hydra is chosen)
     "typer>=0.12",            # per-stage CLI
     # embeddings and topics
-    "torch>=2.6",             # CPU wheel pinned here to keep pip-compile fast; GPU wheel installed
-                               # separately for local runs (see README) — not what the lockfile resolves
+    "torch==2.14.1",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
+                               # [tool.uv.sources]/[tool.uv.index] below) — both must resolve the same version
     "sentence-transformers>=3.0",
     "bertopic>=0.16",
     "umap-learn>=0.5.5",
@@ -39,13 +39,29 @@ dev = [
     "deptry>=0.20",
     "vulture>=2.11",
     "nbstripout>=0.7",
-    "pip-tools>=7.4",
     "lefthook>=1.7",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# torch wheel source: CUDA on Windows (local RTX 2070, sm_75/Turing), CPU on Linux (CI has no GPU).
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'win32'" },
+    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/imaging_ai_atlas"]
@@ -111,7 +127,7 @@ DEP002 = [
     "pandas", "pyyaml", "pydantic", "torch", "sentence-transformers", "bertopic",
     "umap-learn", "hdbscan", "scikit-learn", "mlflow", "plotly",
     "pytest", "pytest-cov", "ruff", "pyright", "deptry", "vulture", "nbstripout",
-    "pip-tools", "lefthook",
+    "lefthook",
 ]
 
 [tool.vulture]

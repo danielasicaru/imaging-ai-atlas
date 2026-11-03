@@ -2,17 +2,25 @@ pre-commit:
   parallel: true
   commands:
     gitleaks:
+      priority: 1
       run: gitleaks protect --staged --redact -v
     ruff-check:
+      priority: 2
       glob: "*.py"
-      run: ruff check --fix {staged_files}
+      run: uv run ruff check --fix {staged_files}
+      stage_fixed: true
     ruff-format:
+      priority: 3
       glob: "*.py"
-      run: ruff format {staged_files}
+      run: uv run ruff format {staged_files}
+      stage_fixed: true
     nbstripout:
+      priority: 4
       glob: "*.ipynb"
-      run: nbstripout {staged_files}
+      run: uv run nbstripout {staged_files}
+      stage_fixed: true
     large-files:
+      priority: 5
       run: sh .githooks/check-large-files.sh
 
 commit-msg:
@@ -24,8 +32,8 @@ pre-push:
   parallel: false
   commands:
     pyright:
-      run: pyright src
+      run: uv run pyright src
     deptry:
-      run: deptry src
+      run: uv run deptry src
     pytest:
-      run: pytest -m 'not slow'
+      run: uv run pytest -m 'not slow'
