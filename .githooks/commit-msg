@@ -5,8 +5,8 @@ set -eu
 msg_file="$1"
 
 sed -E -i \
-    -e '/^[Cc]o-[Aa]uthored-[Bb]y:/d' \
-    -e '/[Gg]enerated (with|by)/d' \
+    -e '/^[[:space:]]*Co-Authored-By:/Id' \
+    -e '/^[[:space:]]*Generated (with|by)/Id' \
     -e '/🤖/d' \
     "$msg_file"
 
