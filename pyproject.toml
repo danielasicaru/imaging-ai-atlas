@@ -118,13 +118,13 @@ exclude_lines = ["if __name__ == .__main__.:"]
 known_first_party = ["imaging_ai_atlas"]
 
 [tool.deptry.per_rule_ignores]
-# DEP002 ("defined but unused"): pyarrow/dvc are CLI tools, never imported directly.
-# The rest are declared ahead of the milestone that imports them (M1 pandas/pyyaml/pydantic,
-# M3 torch/sentence-transformers, M4 bertopic/umap-learn/hdbscan/scikit-learn, M5 mlflow, M6 plotly)
-# and the dev extras aren't imported by src/ at all. Shrink this list as each stage lands.
+# DEP002 ("defined but unused"): pyarrow/dvc are CLI tools or implicit engines (pandas uses
+# pyarrow under the hood for Parquet without a direct import), never imported by name.
+# The rest are declared ahead of the pipeline stage that imports them, and the dev extras
+# aren't imported by src/ at all. Shrink this list as each stage starts using its dependency.
 DEP002 = [
     "pyarrow", "dvc",
-    "pandas", "pyyaml", "pydantic", "torch", "sentence-transformers", "bertopic",
+    "pyyaml", "torch", "sentence-transformers", "bertopic",
     "umap-learn", "hdbscan", "scikit-learn", "mlflow", "plotly",
     "pytest", "pytest-cov", "ruff", "pyright", "deptry", "vulture", "nbstripout",
     "lefthook",
