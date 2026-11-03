@@ -22,8 +22,8 @@ def test_build_labeling_sample_draws_from_both_strata() -> None:
     sample = build_labeling_sample(df, mask, n_in=4, n_out=3, seed=0)
 
     assert len(sample) == 7
-    assert (sample["in_filter"]).sum() == 4
-    assert (~sample["in_filter"]).sum() == 3
+    assert len(sample[sample["in_filter"]]) == 4
+    assert len(sample[~sample["in_filter"]]) == 3
     assert list(sample["label"]) == [""] * 7
     assert sample["external_id"].is_unique
     # cross-check against the mask itself, not just the function's own bookkeeping: every

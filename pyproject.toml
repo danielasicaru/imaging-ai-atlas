@@ -9,6 +9,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     # pipeline
     "pandas>=2.2",
+    "numpy>=1.26",
     "pyarrow>=15",
     "pyyaml>=6.0",
     "pydantic>=2.6",          # config validation (plain YAML + pydantic; revisit if Hydra is chosen)
@@ -17,6 +18,7 @@ dependencies = [
     "torch==2.14.1",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
                                # [tool.uv.sources]/[tool.uv.index] below) — both must resolve the same version
     "sentence-transformers>=3.0",
+    "safetensors>=0.4",
     "bertopic>=0.16",
     "umap-learn>=0.5.5",
     "hdbscan>=0.8.33",
@@ -124,8 +126,8 @@ known_first_party = ["imaging_ai_atlas"]
 # aren't imported by src/ at all. Shrink this list as each stage starts using its dependency.
 DEP002 = [
     "pyarrow", "dvc",
-    "pyyaml", "torch", "sentence-transformers", "bertopic",
-    "umap-learn", "hdbscan", "scikit-learn", "mlflow", "plotly",
+    "torch", "bertopic",
+    "umap-learn", "hdbscan", "scikit-learn", "plotly",
     "pytest", "pytest-cov", "ruff", "pyright", "deptry", "vulture", "nbstripout",
     "lefthook",
 ]

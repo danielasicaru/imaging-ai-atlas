@@ -1,0 +1,29 @@
+# M3 embedding sweep: a general baseline, a scientific-domain model, and a Matryoshka-
+# trained model ablated across dims. Validated against each model's own docs before
+# pinning here, not guessed:
+#   - sentence-transformers/all-MiniLM-L6-v2: general-purpose, 384-dim, no task prefix.
+#   - sentence-transformers/allenai-specter: scientific-paper embeddings, ST-native (no
+#     adapter library needed, unlike specter2), 768-dim fixed, 512-token max.
+#   - nomic-ai/nomic-embed-text-v1.5: supports Matryoshka truncation to 64/128/256/512/768
+#     with "negligible reduction in performance" per its model card; requires
+#     trust_remote_code=True (pinned to a specific revision per project policy) and a task
+#     instruction prefix - "clustering: " matches this project's downstream use (topic
+#     modeling), not retrieval.
+models:
+  - name: sentence-transformers/all-MiniLM-L6-v2
+    max_len: 256
+    batch_size: 64
+    dims: [null]
+
+  - name: sentence-transformers/allenai-specter
+    max_len: 512
+    batch_size: 64
+    dims: [null]
+
+  - name: nomic-ai/nomic-embed-text-v1.5
+    revision: e9b6763023c676ca8431644204f50c2b100d9aab
+    trust_remote_code: true
+    task_prefix: "clustering: "
+    max_len: 256
+    batch_size: 32
+    dims: [64, 128, 256, 512, 768]
