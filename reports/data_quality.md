@@ -26,20 +26,20 @@ exact submission timing for all records.
 
 **Degenerate abstracts exist and are findable by length alone.** The shortest abstracts are literally
 `"No."` and `"Yes."` — almost certainly withdrawn or placeholder submissions. 52 records, negligible by
-count, but each one would otherwise produce a meaningless embedding in M3. Worth excluding before
-embedding, not before ingest (ingest's job is to parse, not to curate).
+count, but each one would otherwise produce a meaningless embedding once the embedding stage runs. Worth
+excluding before embedding, not before ingest (ingest's job is to parse, not to curate).
 
 **A third of all abstracts contain LaTeX markup.** This is far larger than a few parsing edge cases — it
 reflects how physics/math abstracts are actually written (inline `$x^2$`, `\alpha`-style macros). This is
-a real decision point for M3: strip LaTeX before embedding (risk: losing meaning encoded in notation) or
-leave it (risk: a sentence-transformer tokenizer treating `\alpha` as noise rather than signal). Deferred
-to an ADR when M3 starts; noted here so it doesn't get rediscovered from scratch.
+a real decision point for the embedding stage: strip LaTeX before embedding (risk: losing meaning encoded
+in notation) or leave it (risk: a sentence-transformer tokenizer treating `\alpha` as noise rather than
+signal). Deferred to an ADR when that stage starts; noted here so it isn't rediscovered from scratch.
 
 **eess.IV's year-by-year counts refine ADR 0001's claim.** The category wasn't a clean on/off switch at
 2017: a handful of papers (1-5/year) were retroactively tagged back to 2010-2016, then real uptake starts
 in 2017 (96) and explodes through 2018-2019 (600 → 3,139). The growth-trap risk for the eventual report:
 reading this curve as "medical imaging AI research exploded in 2018" would conflate a category-availability
-effect with actual field growth. The filter stage (M2) needs to account for this — filtering on the union
+effect with actual field growth. The filter stage needs to account for this — filtering on the union
 of overlapping categories (eess.IV + cs.CV etc.), not eess.IV alone, and the final report should show the
 eess.IV-specific share separately rather than folding it into an undifferentiated total.
 
