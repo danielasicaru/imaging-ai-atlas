@@ -31,7 +31,7 @@ jobs:
         contains(github.event.head_commit.modified, 'requirements.lock.txt') ||
         contains(github.event.head_commit.modified, 'uv.lock')
       ))
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@6ad84ce1ef2d4124ba333b221894c133c4a970ea # v2.7.0
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
     with:
       scan-args: |-
         --lockfile=requirements.txt:requirements.lock.txt
@@ -46,4 +46,4 @@ jobs:
         with:
           persist-credentials: false
       - uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
-      - uses: reviewdog/action-actionlint@7f84fb71d0bac7cd2e0837cb1427fe3225f17a10 # v1.81.1
+      - uses: reviewdog/action-actionlint@619a81ec64ff8c0211cd6146eb2b21e8f1d7f440 # v1.81.1
