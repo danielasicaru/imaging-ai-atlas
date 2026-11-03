@@ -27,7 +27,7 @@ _MODALITY_TERMS = [
     r"histopatholog\w*",
     r"whole[- ]slide imag\w*",
     r"endoscop\w*",
-    r"OCT\b",
+    r"\bOCT\b",
     r"optical coherence tomography",
 ]
 _CLINICAL_TERMS = [

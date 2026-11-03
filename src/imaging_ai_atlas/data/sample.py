@@ -9,8 +9,8 @@ def build_labeling_sample(
     column is added for the human reviewer to fill in (e.g. "relevant" / "not relevant").
     Each stratum is capped at however many rows actually exist in it.
     """
-    in_pool = df.loc[in_filter.to_numpy()]
-    out_pool = df.loc[~in_filter.to_numpy()]
+    in_pool = df.loc[in_filter]
+    out_pool = df.loc[~in_filter]
 
     in_sample = in_pool.sample(n=min(n_in, len(in_pool)), random_state=seed)
     out_sample = out_pool.sample(n=min(n_out, len(out_pool)), random_state=seed)

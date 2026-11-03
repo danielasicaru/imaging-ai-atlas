@@ -1,5 +1,7 @@
 import math
 
+import pytest
+
 from imaging_ai_atlas.evaluate.precision_recall import estimate_precision_recall, wilson_interval
 
 
@@ -40,3 +42,40 @@ def test_estimate_precision_recall_combines_both_strata() -> None:
     # estimated true positives = 1000 * 0.9 = 900; estimated false negatives = 4000 * 0.05 = 200
     # recall = 900 / (900 + 200)
     assert math.isclose(result.estimated_recall, 900 / 1100, abs_tol=1e-9)
+
+
+def test_estimate_precision_recall_rejects_unlabeled_accepted_stratum() -> None:
+    # An unlabeled stratum means "we don't know its relevant rate" - not "it's zero".
+    with pytest.raises(ValueError, match="accepted_sample_size"):
+        estimate_precision_recall(
+            n_accepted=1000,
+            n_rejected=4000,
+            accepted_sample_size=0,
+            accepted_relevant=0,
+            rejected_sample_size=100,
+            rejected_relevant=5,
+        )
+
+
+def test_estimate_precision_recall_rejects_unlabeled_rejected_stratum() -> None:
+    with pytest.raises(ValueError, match="rejected_sample_size"):
+        estimate_precision_recall(
+            n_accepted=1000,
+            n_rejected=4000,
+            accepted_sample_size=200,
+            accepted_relevant=180,
+            rejected_sample_size=0,
+            rejected_relevant=0,
+        )
+
+
+def test_estimate_precision_recall_rejects_sample_bigger_than_population() -> None:
+    with pytest.raises(ValueError, match="accepted_sample_size"):
+        estimate_precision_recall(
+            n_accepted=100,
+            n_rejected=4000,
+            accepted_sample_size=200,
+            accepted_relevant=180,
+            rejected_sample_size=100,
+            rejected_relevant=5,
+        )

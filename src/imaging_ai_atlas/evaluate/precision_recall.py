@@ -48,12 +48,19 @@ def estimate_precision_recall(
     No CI on recall: it's a ratio of two scaled, independently-sampled proportions, and a
     correct interval needs the delta method or a bootstrap over both strata — deferred
     until recall is actually load-bearing for a go/no-go decision, not estimated here.
+
+    Both sample sizes must be > 0 and no bigger than their population: an unlabeled stratum
+    gives no information, not a false-negative rate of zero, so it's a hard error rather
+    than a silent default that would quietly understate how little the estimate knows.
     """
+    if accepted_sample_size <= 0 or accepted_sample_size > n_accepted:
+        raise ValueError("accepted_sample_size must be in (0, n_accepted]")
+    if rejected_sample_size <= 0 or rejected_sample_size > n_rejected:
+        raise ValueError("rejected_sample_size must be in (0, n_rejected]")
+
     precision = accepted_relevant / accepted_sample_size
     precision_ci = wilson_interval(accepted_relevant, accepted_sample_size)
-    rejected_relevant_rate = (
-        rejected_relevant / rejected_sample_size if rejected_sample_size else 0.0
-    )
+    rejected_relevant_rate = rejected_relevant / rejected_sample_size
 
     estimated_true_positives = n_accepted * precision
     estimated_false_negatives = n_rejected * rejected_relevant_rate
