@@ -19,6 +19,10 @@ dependencies = [
                                # [tool.uv.sources]/[tool.uv.index] below) — both must resolve the same version
     "sentence-transformers>=3.0",
     "safetensors>=0.4",
+    "einops>=0.7",            # required by nomic-embed-text-v1.5's trust_remote_code module
+    "transformers<5.12",      # nomic-embed-text-v1.5's remote code calls
+                               # PreTrainedModel.get_extended_attention_mask(), removed in
+                               # transformers 5.12 - AttributeError on NomicBertModel above that
     "bertopic>=0.16",
     "umap-learn>=0.5.5",
     "hdbscan>=0.8.33",
@@ -128,6 +132,11 @@ DEP002 = [
     "pyarrow", "dvc",
     "torch", "bertopic",
     "umap-learn", "hdbscan", "scikit-learn", "plotly",
+    # einops: required by nomic-embed-text-v1.5's trust_remote_code module, never imported
+    # by our own code. transformers: version-capped (<5.12) to work around nomic's remote
+    # code calling an API transformers removed in 5.12 - also never imported directly,
+    # sentence-transformers uses it internally.
+    "einops", "transformers",
     "pytest", "pytest-cov", "ruff", "pyright", "deptry", "vulture", "nbstripout",
     "lefthook",
 ]
