@@ -47,14 +47,17 @@ def evaluate_variant(
     every remaining seed to measure stability (mean pairwise ARI). Logs one MLflow run per
     variant with every metric this milestone's plan requires.
     """
+    label = f"{variant.model_name} (dims={variant.dims})"
     texts = [
         strip_latex(f"{title} {abstract}")
         for title, abstract in zip(df["title"], df["abstract"], strict=True)
     ]
 
+    print(f"  [{label}] fitting seed={config.seeds[0]} ({len(texts)} docs)...", flush=True)
     start = time.perf_counter()
     topic_model, topics = fit_topic_model(embeddings, texts, config.seeds[0], config)
     runtime_s = time.perf_counter() - start
+    print(f"  [{label}] seed={config.seeds[0]} done in {runtime_s:.1f}s", flush=True)
 
     keywords = topic_keywords(topic_model)
     analyze = topic_model.vectorizer_model.build_analyzer()
@@ -66,6 +69,7 @@ def evaluate_variant(
     # reduce_outliers raises ValueError on a corpus with zero outliers rather than being a
     # no-op - nothing to reduce means the "after" rate is trivially the same as "before".
     if outlier_rate_before > 0:
+        print(f"  [{label}] reducing outliers...", flush=True)
         reduced_topics = topic_model.reduce_outliers(
             texts, topics, strategy=config.outlier_reduction_strategy
         )
@@ -75,9 +79,15 @@ def evaluate_variant(
 
     all_assignments = [topics]
     for seed in config.seeds[1:]:
+        print(f"  [{label}] stability refit seed={seed}...", flush=True)
+        seed_start = time.perf_counter()
         _, seed_topics = fit_topic_model(embeddings, texts, seed, config)
+        print(
+            f"  [{label}] seed={seed} done in {time.perf_counter() - seed_start:.1f}s", flush=True
+        )
         all_assignments.append(seed_topics)
     ari_mean = mean_pairwise_ari(all_assignments) if len(all_assignments) > 1 else None
+    print(f"  [{label}] evaluation complete.", flush=True)
 
     with mlflow.start_run(run_name=f"{variant.model_name}-{variant.dims}"):
         mlflow.log_params(
