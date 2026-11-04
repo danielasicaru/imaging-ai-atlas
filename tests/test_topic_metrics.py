@@ -46,6 +46,17 @@ def test_hungarian_keyword_overlap_is_one_for_identical_topic_sets() -> None:
     assert hungarian_keyword_overlap(topics, topics) == 1.0
 
 
+def test_hungarian_keyword_overlap_drops_unmatched_topics_in_the_longer_run() -> None:
+    # topics_a has an extra topic ("x","y") with no counterpart in topics_b. It should be
+    # silently excluded from the average, not penalize the score as a zero-overlap pair -
+    # this is the documented caveat, pinned down so a future change can't quietly "fix" it
+    # into penalizing unmatched topics without a deliberate decision.
+    topics_a = [["mri", "scan"], ["ct", "lung"], ["x", "y"]]
+    topics_b = [["mri", "scan"], ["ct", "lung"]]
+
+    assert hungarian_keyword_overlap(topics_a, topics_b) == 1.0
+
+
 def test_npmi_coherence_returns_a_finite_score_in_range() -> None:
     docs = [
         ["mri", "scan", "brain", "tumor"],
@@ -59,3 +70,12 @@ def test_npmi_coherence_returns_a_finite_score_in_range() -> None:
 
     assert math.isfinite(score)
     assert -1.01 <= score <= 1.01
+
+
+def test_npmi_coherence_returns_nan_rather_than_crashing_on_degenerate_input() -> None:
+    # A topic word that never co-occurs with any other word in the (tiny, single-word)
+    # corpus - gensim itself returns NaN here via a mean-of-empty-slice, not an exception,
+    # but the function must not propagate that as a crash either way.
+    score = npmi_coherence(topic_words=[["a", "b"]], tokenized_docs=[["a"]])
+
+    assert math.isnan(score)

@@ -42,6 +42,33 @@ def test_load_variant_embeddings_round_trips_through_the_m3_cache(tmp_path) -> N
     np.testing.assert_array_equal(loaded, embeddings)
 
 
+def test_evaluate_variant_handles_every_document_being_an_outlier(tmp_path) -> None:
+    # min_cluster_size bigger than the corpus guarantees HDBSCAN finds zero real clusters -
+    # reduce_outliers has nothing to reduce into (no real topic to reassign an outlier to),
+    # which must be skipped rather than attempted, just like the zero-outliers case.
+    mlflow = pytest.importorskip("mlflow")
+    mlflow.set_tracking_uri(f"sqlite:///{tmp_path / 'mlflow.db'}")
+
+    rng = np.random.default_rng(0)
+    embeddings = rng.normal(size=(30, 8)).astype(np.float32)
+    df = pd.DataFrame(
+        {"title": ["paper about things"] * 30, "abstract": ["an abstract of some kind"] * 30}
+    )
+    variant = EmbeddingVariant(model_name="fake-model", max_len=256, dims=None)
+    config = TopicModelConfig(
+        umap=UmapConfig(n_components=2, n_neighbors=5, min_dist=0.0, metric="euclidean"),
+        hdbscan=HdbscanConfig(min_cluster_size=100),
+        vectorizer=VectorizerConfig(min_df=1),
+        seeds=[0],
+    )
+
+    evaluate_variant(df, embeddings, variant, config)
+
+    runs = mlflow.search_runs(search_all_experiments=True)
+    assert runs.iloc[0]["metrics.outlier_rate_before"] == 1.0
+    assert runs.iloc[0]["metrics.outlier_rate_after"] == 1.0
+
+
 def test_evaluate_variant_runs_end_to_end_and_logs_mlflow(tmp_path) -> None:
     mlflow = pytest.importorskip("mlflow")
     mlflow.set_tracking_uri(f"sqlite:///{tmp_path / 'mlflow.db'}")

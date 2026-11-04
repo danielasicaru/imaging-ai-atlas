@@ -14,6 +14,12 @@ class DimensionalityReducer(Protocol):
     """Whatever BERTopic's `umap_model` slot actually needs: fit_transform. UMAP and PCA
     both satisfy this, which is what makes the PCA-5D control experiment a drop-in swap
     rather than a separate pipeline.
+
+    This checks structural minimum compatibility only (one method, one required
+    positional arg) - it does not guarantee a reducer is behaviorally compatible with
+    whatever BERTopic actually does with it internally. Both UMAP and PCA are verified
+    to work in practice (the real sweep ran both); this Protocol is a typing aid for this
+    module's own injection site, not a substitute for that verification.
     """
 
     def fit_transform(self, embeddings: np.ndarray, /) -> np.ndarray: ...

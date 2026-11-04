@@ -35,6 +35,13 @@ def hungarian_keyword_overlap(topics_a: list[list[str]], topics_b: list[list[str
     Jaccard keyword similarity, then average the overlap of matched pairs. Topic *labels*
     aren't stable across HDBSCAN runs - topic 3 in one run isn't "the same" cluster as
     topic 3 in another - so topics must be matched by content before comparing.
+
+    If `topics_a` and `topics_b` have different lengths (HDBSCAN finding a different
+    number of clusters per seed is common, not just different labels), only
+    min(len(a), len(b)) pairs get matched - the extra topics in the longer run are
+    silently excluded from the average, not counted as zero-overlap. A seed pair that
+    finds very different topic *counts* can therefore still score a high overlap on the
+    topics it does match, even though the runs disagree on how many themes exist.
     """
     cost = np.array([[-_jaccard(a, b) for b in topics_b] for a in topics_a])
     row_idx, col_idx = linear_sum_assignment(cost)
@@ -47,9 +54,17 @@ def npmi_coherence(topic_words: list[list[str]], tokenized_docs: list[list[str]]
     topics against the corpus they were fit on. Correlates only weakly with human judgment
     of topic quality (Lau et al. findings consistently cited in the topic-modeling
     literature) - a sanity signal, not a substitute for the human label check in M4.
+
+    Returns NaN (rather than raising) if gensim can't compute coherence for this
+    topic/corpus combination - a known failure mode when a topic's words never co-occur
+    in any document window (sparse/tiny corpora). Not hit by this project's real runs so
+    far, but a future corpus (e.g. PubMed in M7) could be sparser.
     """
     dictionary = Dictionary(tokenized_docs)
-    coherence_model = CoherenceModel(
-        topics=topic_words, texts=tokenized_docs, dictionary=dictionary, coherence="c_npmi"
-    )
-    return float(coherence_model.get_coherence())
+    try:
+        coherence_model = CoherenceModel(
+            topics=topic_words, texts=tokenized_docs, dictionary=dictionary, coherence="c_npmi"
+        )
+        return float(coherence_model.get_coherence())
+    except (ValueError, ZeroDivisionError, IndexError):
+        return float("nan")

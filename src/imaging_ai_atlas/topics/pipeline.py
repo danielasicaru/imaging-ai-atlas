@@ -67,8 +67,11 @@ def evaluate_variant(
     npmi = npmi_coherence(keywords, tokenized_docs) if keywords else float("nan")
     outlier_rate_before = outlier_rate(topics)
     # reduce_outliers raises ValueError on a corpus with zero outliers rather than being a
-    # no-op - nothing to reduce means the "after" rate is trivially the same as "before".
-    if outlier_rate_before > 0:
+    # no-op ("nothing to reduce" -> after == before). It also has nothing to reduce
+    # *into* when there are no real topics at all (every doc an outlier, or HDBSCAN found
+    # zero clusters) - skip in both edge cases rather than rely on reduce_outliers itself
+    # to handle them gracefully.
+    if 0 < outlier_rate_before < 1.0 and keywords:
         print(f"  [{label}] reducing outliers...", flush=True)
         reduced_topics = topic_model.reduce_outliers(
             texts, topics, strategy=config.outlier_reduction_strategy
