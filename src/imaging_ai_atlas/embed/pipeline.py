@@ -4,7 +4,7 @@ from pathlib import Path
 import mlflow
 import pandas as pd
 
-from imaging_ai_atlas.data.clean_text import strip_latex
+from imaging_ai_atlas.data.clean_text import CLEANING_VERSION, strip_latex
 from imaging_ai_atlas.embed.cache import cache_key, load_cached, save_cached
 from imaging_ai_atlas.embed.config import EmbedModelConfig
 from imaging_ai_atlas.embed.embedder import EmbeddingModel, embed_texts, truncate_and_normalize
@@ -12,11 +12,13 @@ from imaging_ai_atlas.embed.model_loader import SentenceTransformerModel
 
 
 def corpus_hash(df: pd.DataFrame) -> str:
-    """Hash of the *set* of papers being embedded, not the whole frame - stable across row
-    order and unaffected by columns the embedding step doesn't read.
+    """Hash of the papers being embedded - id *and* the text content that actually gets
+    embedded, not just the id set. A re-scrape that fixes a truncated abstract for the same
+    external_id must invalidate the cache; hashing ids alone would miss that.
     """
-    ids = sorted(df["external_id"].astype(str))
-    return hashlib.sha256("|".join(ids).encode("utf-8")).hexdigest()[:16]
+    rows = sorted(zip(df["external_id"].astype(str), df["title"], df["abstract"], strict=True))
+    raw = "|".join(f"{i}\x1f{t}\x1f{a}" for i, t, a in rows)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
 def run_embedding_sweep(
@@ -40,24 +42,44 @@ def run_embedding_sweep(
     ]
     data_hash = corpus_hash(df)
     full_key = cache_key(
-        config.name, config.revision, config.task_prefix, config.max_len, data_hash, None
+        config.name,
+        config.revision,
+        config.task_prefix,
+        config.max_len,
+        data_hash,
+        None,
+        CLEANING_VERSION,
     )
     full_embeddings = load_cached(full_key, cache_dir)
     full_cache_hit = full_embeddings is not None
     if full_embeddings is None:
-        if model is None:
-            model = SentenceTransformerModel(
-                config.name, revision=config.revision, trust_remote_code=config.trust_remote_code
+        active_model = model
+        if active_model is None:
+            active_model = SentenceTransformerModel(
+                config.name,
+                revision=config.revision,
+                trust_remote_code=config.trust_remote_code,
+                max_len=config.max_len,
             )
-        full_embeddings = embed_texts(model, texts, config.task_prefix, config.batch_size, None)
+        full_embeddings = embed_texts(
+            active_model, texts, config.task_prefix, config.batch_size, None
+        )
         save_cached(full_key, full_embeddings, cache_dir)
 
+    # dims=None reuses the full embedding directly rather than its own load_cached call:
+    # it's the same artifact already in hand, not a second cache entry to look up.
     for dims in config.dims:
         if dims is None:
             embeddings, cache_hit = full_embeddings, full_cache_hit
         else:
             key = cache_key(
-                config.name, config.revision, config.task_prefix, config.max_len, data_hash, dims
+                config.name,
+                config.revision,
+                config.task_prefix,
+                config.max_len,
+                data_hash,
+                dims,
+                CLEANING_VERSION,
             )
             embeddings = load_cached(key, cache_dir)
             cache_hit = embeddings is not None

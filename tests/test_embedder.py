@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from imaging_ai_atlas.embed.embedder import embed_texts, truncate_and_normalize
 
@@ -34,6 +35,15 @@ def test_truncate_and_normalize_renormalizes_after_truncation() -> None:
     result = truncate_and_normalize(embeddings, dims=1)
 
     np.testing.assert_allclose(result, [[1.0]])
+
+
+def test_truncate_and_normalize_raises_on_zero_norm_row() -> None:
+    # Truncating to the first 2 dims of this vector leaves [0, 0] - a zero-norm row that
+    # would silently become NaN/inf on re-normalization if not caught explicitly.
+    embeddings = np.array([[0.0, 0.0, 3.0, 4.0]])
+
+    with pytest.raises(ValueError, match="zero-norm"):
+        truncate_and_normalize(embeddings, dims=2)
 
 
 def test_embed_texts_prepends_task_prefix_and_passes_batch_size() -> None:

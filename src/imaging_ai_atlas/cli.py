@@ -25,6 +25,13 @@ def embed(
     """Embed the M2-filtered corpus with every model in `config_path`, caching to
     `cache_dir` and logging one MLflow run per (model, dims) combination.
     """
+    if not papers_path.exists():
+        typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
+        raise typer.Exit(1)
+    if not config_path.exists():
+        typer.echo(f"No embed config at {config_path}.", err=True)
+        raise typer.Exit(1)
+
     df = pd.read_parquet(papers_path)
     filtered = df.loc[apply_filter(df)].reset_index(drop=True)
     typer.echo(f"Embedding {len(filtered)} filtered papers.")

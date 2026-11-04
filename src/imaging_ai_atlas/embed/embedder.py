@@ -22,6 +22,12 @@ def truncate_and_normalize(embeddings: np.ndarray, dims: int | None) -> np.ndarr
         return embeddings
     truncated = embeddings[:, :dims]
     norms = np.linalg.norm(truncated, axis=1, keepdims=True)
+    if np.any(norms == 0):
+        raise ValueError(
+            f"{int(np.sum(norms == 0))} row(s) have a zero-norm vector after truncating to "
+            f"{dims} dims - re-normalizing would produce NaN/inf, which UMAP/HDBSCAN would "
+            "silently accept and corrupt downstream, so this fails loudly instead."
+        )
     return truncated / norms
 
 

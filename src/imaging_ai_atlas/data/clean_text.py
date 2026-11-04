@@ -1,5 +1,11 @@
 import re
 
+# Bump whenever strip_latex's behavior changes (regex edits, new rules). Folded into the
+# embedding cache key so a logic change invalidates cached embeddings even though the
+# corpus's external_ids/text haven't changed - otherwise the cache would silently keep
+# serving embeddings cleaned under the old, now-wrong logic.
+CLEANING_VERSION = 1
+
 # A LaTeX command with an optional single brace group (\emph{bold} -> drop both), a bare
 # command (\alpha), or a math span ($...$). Not a full LaTeX parser (see quality.py's
 # detection pattern) - this one removes instead of just flagging, for embedding input.

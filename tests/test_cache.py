@@ -4,21 +4,22 @@ from imaging_ai_atlas.embed.cache import cache_key, load_cached, save_cached
 
 
 def test_cache_key_is_stable_for_the_same_inputs() -> None:
-    key1 = cache_key("minilm", "abc123", "", 256, "hash1", None)
-    key2 = cache_key("minilm", "abc123", "", 256, "hash1", None)
+    key1 = cache_key("minilm", "abc123", "", 256, "hash1", None, 1)
+    key2 = cache_key("minilm", "abc123", "", 256, "hash1", None, 1)
 
     assert key1 == key2
 
 
 def test_cache_key_differs_when_any_input_differs() -> None:
-    base = cache_key("minilm", "abc123", "", 256, "hash1", None)
+    base = cache_key("minilm", "abc123", "", 256, "hash1", None, 1)
 
-    assert base != cache_key("specter", "abc123", "", 256, "hash1", None)
-    assert base != cache_key("minilm", "def456", "", 256, "hash1", None)
-    assert base != cache_key("minilm", "abc123", "clustering: ", 256, "hash1", None)
-    assert base != cache_key("minilm", "abc123", "", 512, "hash1", None)
-    assert base != cache_key("minilm", "abc123", "", 256, "hash2", None)
-    assert base != cache_key("minilm", "abc123", "", 256, "hash1", 128)
+    assert base != cache_key("specter", "abc123", "", 256, "hash1", None, 1)
+    assert base != cache_key("minilm", "def456", "", 256, "hash1", None, 1)
+    assert base != cache_key("minilm", "abc123", "clustering: ", 256, "hash1", None, 1)
+    assert base != cache_key("minilm", "abc123", "", 512, "hash1", None, 1)
+    assert base != cache_key("minilm", "abc123", "", 256, "hash2", None, 1)
+    assert base != cache_key("minilm", "abc123", "", 256, "hash1", 128, 1)
+    assert base != cache_key("minilm", "abc123", "", 256, "hash1", None, 2)
 
 
 def test_load_cached_returns_none_on_miss(tmp_path) -> None:

@@ -12,12 +12,16 @@ def cache_key(
     max_len: int,
     data_hash: str,
     dims: int | None,
+    cleaning_version: int,
 ) -> str:
-    """A short, stable identifier for one (model, config, data) embedding run. Hashed
-    rather than used as a literal filename so none of the inputs need filesystem-safe
-    characters (model names contain "/").
+    """A short, stable identifier for one (model, config, data, preprocessing) embedding
+    run. Hashed rather than used as a literal filename so none of the inputs need
+    filesystem-safe characters (model names contain "/"). `cleaning_version` must be part
+    of this, not just `data_hash`: a text-cleaning logic change (e.g. a strip_latex regex
+    fix) changes what gets embedded without changing the corpus's ids/content, and a cache
+    keyed only on data would silently keep serving embeddings cleaned under the old logic.
     """
-    raw = f"{model_name}|{revision}|{task_prefix}|{max_len}|{data_hash}|{dims}"
+    raw = f"{model_name}|{revision}|{task_prefix}|{max_len}|{data_hash}|{dims}|{cleaning_version}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
