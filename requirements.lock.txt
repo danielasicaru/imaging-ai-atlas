@@ -441,6 +441,14 @@ funcy==2.1 \
     #   dvc
     #   dvc-task
     #   gto
+gensim==4.4.0 \
+    --hash=sha256:0845b2fa039dbea5667fb278b5414e70f6d48fd208ef51f33e84a78444288d8d \
+    --hash=sha256:1853fc5be730f692c444a826041fef9a2fc8d74c73bb59748904b2e3221daa86 \
+    --hash=sha256:23a2a4260f01c8f71bae5dd0e8a01bb247a2c789480c033e0eaba100b0ad4239 \
+    --hash=sha256:4b73ff30af6ddd0d2ddf9473b1eb44603cd79ec14c87d93b75291802b991916c \
+    --hash=sha256:a3f5b626da5518e79a479140361c663089fe7998df8ba52d56e1ded71ac5bdf5 \
+    --hash=sha256:b3a3f9bc8d4178b01d114e1c58c5ab2333f131c7415fb3d8ec8f1ecfe4c5b544
+    # via imaging-ai-atlas
 gitdb==4.0.12 \
     --hash=sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571 \
     --hash=sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf
@@ -725,6 +733,7 @@ numpy==2.5.4 \
     # via
     #   bertopic
     #   contourpy
+    #   gensim
     #   hdbscan
     #   imaging-ai-atlas
     #   matplotlib
@@ -1137,7 +1146,9 @@ scipy==1.18.1 \
     --hash=sha256:e708533e8b2ae2497d65346538a7dcc92814410b25b81432eac66de0f2af8265 \
     --hash=sha256:f55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218
     # via
+    #   gensim
     #   hdbscan
+    #   imaging-ai-atlas
     #   mlflow
     #   pynndescent
     #   scikit-learn
@@ -1188,6 +1199,10 @@ skops==0.16.0 \
     --hash=sha256:58ddb63fed9f2a8545baa1a91c45c26d44cf65c83e2fd217541c41e411cf1d74 \
     --hash=sha256:5b2eb1bc49392c74a38db04481e2d110f97d9a72d6ae38fbd698aa7a865a9070
     # via mlflow
+smart-open==9.0.2 \
+    --hash=sha256:945216f3360166fdb42fdee0e19b37f032caaf9429d5797bc06b01d2c75a71a4 \
+    --hash=sha256:adfe6413bfb39c2895cf9d066c8bea326aeb8b3b717306e6a10c9efa931ae796
+    # via gensim
 smmap==5.0.3 \
     --hash=sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c \
     --hash=sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f
@@ -1403,6 +1418,21 @@ werkzeug==3.1.9 \
     # via
     #   flask
     #   flask-cors
+wrapt==2.5.2 \
+    --hash=sha256:092472b7b1494deef40dac5e9f6295013a9d51b112b5fbc4350f64dc2574e46a \
+    --hash=sha256:36021ef761856bdbc10d5f3da9a95af93ef60d6acf9c72c8f849937ba2b902aa \
+    --hash=sha256:3b6885250b809532a634acd56e360d57c201c1cdc75cbf2b5e106241ece6cbc3 \
+    --hash=sha256:40e03506f09dbf4854fd69848e843dadd9b7fbbdd217837cb27b37fb8f0b5bc3 \
+    --hash=sha256:551cb49e88b3722faad780303833bc4fa70685fb1773270fb98b40d39d9fddbf \
+    --hash=sha256:61eb54e9540ea522c2c4752a57549a83d3c67e6704ed708403d28e067aaf90f0 \
+    --hash=sha256:81bdf0bd141d9b1706a0751b2ee068c7afe6be4042712d427b32b3072d5c40b9 \
+    --hash=sha256:858511731d6ede4217960c5fecdb5ecbf90e306dfd93b837395658d61374a498 \
+    --hash=sha256:ac00ba7d22d55d3c8d085005ce4942ff3bb118d480f889b5984f1d3454052917 \
+    --hash=sha256:bec3b6b1ae2f7ed763fb0ba1776b9b5f11283e6ff40c9cbe3a855ea652c326cf \
+    --hash=sha256:c60a5cd8b7b510056f2643d94f1c144533a568ade2891a9dd35733f5e0055777 \
+    --hash=sha256:d108bd98ab2c5ccbf55cf2154e0a73341df930030df2e01ee35d71a44a99d3ad \
+    --hash=sha256:e57d79e3338b3cecee1dd80d6ef8f945f8ea7b92f0d8d5591f840ffa0afc14dc
+    # via smart-open
 yarl==1.25.1 \
     --hash=sha256:03dd38de09bc213e9a8b29761eec33ee1d5318dac0e49d8af36e4d27830e23a7 \
     --hash=sha256:419f392a1da624877975709e3864dfe833af6cc7671b39318086d456e288380c \

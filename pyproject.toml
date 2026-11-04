@@ -27,6 +27,8 @@ dependencies = [
     "umap-learn>=0.5.5",
     "hdbscan>=0.8.33",
     "scikit-learn>=1.4",
+    "gensim>=4.3",            # NPMI coherence (CoherenceModel, c_npmi)
+    "scipy>=1.12",            # Hungarian topic matching (linear_sum_assignment)
     # tracking, data versioning, story
     "mlflow>=2.12",
     "dvc>=3.50",

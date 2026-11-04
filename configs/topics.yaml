@@ -1,0 +1,46 @@
+# M4 topic-model comparison: one BERTopic fit (+ 5-seed stability refits) per embedding
+# variant already produced by `atlas embed` (see configs/embed.yaml). Variant fields here
+# must match the embed config exactly - they're used to look up the same cache key, not to
+# re-embed anything.
+embedding_variants:
+  - model_name: sentence-transformers/all-MiniLM-L6-v2
+    max_len: 256
+    dims: null
+
+  - model_name: sentence-transformers/allenai-specter
+    max_len: 512
+    dims: null
+
+  - model_name: nomic-ai/nomic-embed-text-v1.5
+    revision: e9b6763023c676ca8431644204f50c2b100d9aab
+    task_prefix: "clustering: "
+    max_len: 256
+    dims: 64
+
+  - model_name: nomic-ai/nomic-embed-text-v1.5
+    revision: e9b6763023c676ca8431644204f50c2b100d9aab
+    task_prefix: "clustering: "
+    max_len: 256
+    dims: 128
+
+  - model_name: nomic-ai/nomic-embed-text-v1.5
+    revision: e9b6763023c676ca8431644204f50c2b100d9aab
+    task_prefix: "clustering: "
+    max_len: 256
+    dims: 256
+
+  - model_name: nomic-ai/nomic-embed-text-v1.5
+    revision: e9b6763023c676ca8431644204f50c2b100d9aab
+    task_prefix: "clustering: "
+    max_len: 256
+    dims: 512
+
+  - model_name: nomic-ai/nomic-embed-text-v1.5
+    revision: e9b6763023c676ca8431644204f50c2b100d9aab
+    task_prefix: "clustering: "
+    max_len: 256
+    dims: 768
+
+# topic_model: left at config.py defaults (UMAP 5D cosine, HDBSCAN min_cluster_size=15,
+# CountVectorizer min_df=5, 5 seeds, c-TF-IDF outlier reduction) - explicit here only if a
+# variant needs to deviate, none do yet.
