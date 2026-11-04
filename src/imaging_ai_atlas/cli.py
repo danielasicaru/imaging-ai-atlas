@@ -1,13 +1,23 @@
+import shutil
+import subprocess
 from pathlib import Path
 
 import pandas as pd
 import typer
 
+from imaging_ai_atlas.data.clean_text import strip_latex
 from imaging_ai_atlas.data.filter import apply_filter
 from imaging_ai_atlas.embed.config import load_embed_config
 from imaging_ai_atlas.embed.pipeline import corpus_hash, run_embedding_sweep
-from imaging_ai_atlas.topics.config import load_topic_sweep_config
+from imaging_ai_atlas.topics.config import (
+    EmbeddingVariant,
+    TopicModelConfig,
+    load_topic_sweep_config,
+)
+from imaging_ai_atlas.topics.labeling import build_topic_label_sample
+from imaging_ai_atlas.topics.model import fit_topic_model
 from imaging_ai_atlas.topics.pipeline import evaluate_variant, load_variant_embeddings
+from imaging_ai_atlas.topics.registry import register_topic_model
 
 app = typer.Typer(help="imaging-ai-atlas: a data story on medical-imaging AI research trends.")
 
@@ -71,6 +81,64 @@ def topics(
         typer.echo(f"Running {variant.model_name} (dims={variant.dims})...")
         embeddings = load_variant_embeddings(variant, data_hash, embeddings_dir)
         evaluate_variant(filtered, embeddings, variant, config.topic_model)
+
+
+@app.command()
+def register_topic(
+    papers_path: Path = Path("data/interim/papers.parquet"),
+    embeddings_dir: Path = Path("data/interim/embeddings"),
+    model_dir: Path = Path("data/interim/topic_model"),
+    labeling_sample_path: Path = Path("data/interim/topic_labeling_sample.csv"),
+    model_name: str = "nomic-ai/nomic-embed-text-v1.5",
+    revision: str = "e9b6763023c676ca8431644204f50c2b100d9aab",
+    task_prefix: str = "clustering: ",
+    max_len: int = 256,
+    dims: int = 64,
+    n_label_topics: int = 30,
+) -> None:
+    """Fit the chosen primary topic model (nomic@64 per ADR 0004) once at seed 0, register
+    it as a standard MLflow artifact, and write a human coherence-check sample for the
+    `n_label_topics` largest topics. Requires `atlas embed` to have cached this variant.
+    """
+    if not papers_path.exists():
+        typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
+        raise typer.Exit(1)
+
+    df = pd.read_parquet(papers_path)
+    filtered = df.loc[apply_filter(df)].reset_index(drop=True)
+    data_hash = corpus_hash(filtered)
+
+    variant = EmbeddingVariant(
+        model_name=model_name,
+        revision=revision,
+        task_prefix=task_prefix,
+        max_len=max_len,
+        dims=dims,
+    )
+    embeddings = load_variant_embeddings(variant, data_hash, embeddings_dir)
+    texts = [
+        strip_latex(f"{title} {abstract}")
+        for title, abstract in zip(filtered["title"], filtered["abstract"], strict=True)
+    ]
+
+    config = TopicModelConfig()
+    typer.echo(f"Fitting final topic model on {len(texts)} docs...")
+    topic_model, topics = fit_topic_model(embeddings, texts, config.seeds[0], config)
+
+    sample = build_topic_label_sample(topic_model, topics, texts, n_label_topics, config.seeds[0])
+    labeling_sample_path.parent.mkdir(parents=True, exist_ok=True)
+    sample.to_csv(labeling_sample_path, index=False)
+    typer.echo(f"Wrote labeling sample ({len(sample)} topics) to {labeling_sample_path}")
+
+    git_executable = shutil.which("git")
+    if git_executable is None:
+        typer.echo("git executable not found on PATH.", err=True)
+        raise typer.Exit(1)
+    git_sha = subprocess.run(  # noqa: S603 - fixed argv, no user input
+        [git_executable, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    register_topic_model(topic_model, model_dir, data_hash, model_name, git_sha)
+    typer.echo(f"Registered topic model to MLflow (artifacts under {model_dir}).")
 
 
 if __name__ == "__main__":
