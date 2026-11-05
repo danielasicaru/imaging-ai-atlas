@@ -1,8 +1,9 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-from imaging_ai_atlas.topics.registry import register_topic_model
+from imaging_ai_atlas.topics.registry import register_topic_model, save_topic_assignments
 
 
 class FakeTopicModel:
@@ -37,3 +38,13 @@ def test_register_topic_model_logs_artifacts_and_tags(tmp_path: Path) -> None:
     # through M3's pinned loader (same revision/task_prefix), not whatever BERTopic would
     # try to download from a bare model-name pointer.
     assert fake_model.save_kwargs["save_embedding_model"] is False
+
+
+def test_save_topic_assignments_round_trips(tmp_path: Path) -> None:
+    path = tmp_path / "assignments.parquet"
+
+    save_topic_assignments(["2501.00001", "2501.00002"], [0, -1], path)
+
+    loaded = pd.read_parquet(path)
+    assert loaded["external_id"].tolist() == ["2501.00001", "2501.00002"]
+    assert loaded["topic_id"].tolist() == [0, -1]

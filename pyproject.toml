@@ -32,7 +32,7 @@ dependencies = [
     # tracking, data versioning, story
     "mlflow>=2.12",
     "dvc>=3.50",
-    "plotly>=5.20",
+    "matplotlib>=3.9",
 ]
 
 [project.scripts]
@@ -133,7 +133,7 @@ known_first_party = ["imaging_ai_atlas"]
 DEP002 = [
     "pyarrow", "dvc",
     "torch", "bertopic",
-    "umap-learn", "hdbscan", "scikit-learn", "plotly",
+    "umap-learn", "hdbscan", "scikit-learn",
     # einops: required by nomic-embed-text-v1.5's trust_remote_code module, never imported
     # by our own code. transformers: version-capped (<5.12) to work around nomic's remote
     # code calling an API transformers removed in 5.12 - also never imported directly,
