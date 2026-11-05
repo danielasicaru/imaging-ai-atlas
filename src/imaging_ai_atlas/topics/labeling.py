@@ -24,10 +24,12 @@ def build_topic_label_sample(
     """The `n_topics` largest real topics (an incoherent large topic damages the overall
     story more than an incoherent small one) with top keywords and example documents, for
     a human coherence spot-check - same spirit as M2's labeling CSV, but for topics rather
-    than filter decisions. The outlier bucket (-1) is excluded, it isn't a topic.
+    than filter decisions. The outlier bucket (-1) is excluded, it isn't a topic. Ties in
+    size are broken by ascending topic_id, so the selection is fully deterministic rather
+    than relying on `value_counts`'s incidental tie order.
     """
     sizes: dict[int, int] = pd.Series(topics).value_counts().to_dict()
-    top_ids = [topic_id for topic_id in sizes if topic_id != -1][:n_topics]
+    top_ids = sorted((t for t in sizes if t != -1), key=lambda t: (-sizes[t], t))[:n_topics]
 
     rng = np.random.default_rng(seed)
     rows = []
@@ -35,6 +37,12 @@ def build_topic_label_sample(
         doc_idxs = [i for i, t in enumerate(topics) if t == topic_id]
         chosen = rng.choice(doc_idxs, size=min(3, len(doc_idxs)), replace=False)
         examples = [texts[i][:200] for i in chosen]
+        # `topic_id` always comes from `topics` itself, so `get_topic` should always know
+        # about it; if a model ever returned its `False`-for-unknown-topic sentinel here
+        # anyway (e.g. drift between fit state and the `topics` labels), this degrades to
+        # an empty keyword string rather than raising - a deliberate, permissive choice to
+        # keep the sample generator usable even on partially-inconsistent input, not an
+        # oversight.
         words = topic_model.get_topic(topic_id)
         # BERTopic returns either a list of (word, score) tuples or a word->score mapping
         # depending on version - normalize both to the word strings, in order.
