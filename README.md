@@ -1,40 +1,51 @@
 # imaging-ai-atlas
 
-How has AI research in medical imaging shifted over the last decade?
+How has AI research in medical imaging shifted over the last decade? A topic-modeling pipeline over
+arXiv metadata, told as a data story — findings, limitations, and figures land as the pipeline stages
+below are completed.
 
-> Work in progress — this README will grow into the full data story (findings, limitations, figures)
-> as milestones land. The spine below is the plan: one README question per pipeline stage per report
-> section.
+The research topic itself is a config, not a hardcoded assumption: the filter rule that decides which
+papers count can point at medical imaging AI (the current default) or a narrower domain, with no code
+change. See [Changing the research topic](#changing-the-research-topic).
 
-## Story spine
+## Pipeline
 
 ```mermaid
 flowchart LR
     classDef data fill:#e8eef7,stroke:#4a6fa5
     classDef model fill:#eef7e8,stroke:#5a9a4a
-    classDef evidence fill:#f7efe8,stroke:#b07a3a
     classDef story fill:#f7e8ee,stroke:#a5457a
 
-    src[arXiv snapshot]
-    src --> ingest[ingest]
-    ingest --> q["Which papers count? — atlas filter"]:::data
-    q -- "category + rule, labeled precision/recall" --> dq["Can we trust the data? — atlas quality"]:::data
-    dq -- "dedup, LaTeX leakage, growth base rate" --> rep["What is each paper about? — atlas embed"]:::model
-    rep -- "sentence embeddings, Matryoshka ablation" --> th["Which themes exist? — atlas model"]:::model
-    th -- "UMAP-5D, HDBSCAN, c-TF-IDF" --> ev["Are the themes real? — atlas evaluate"]:::evidence
-    ev -- "NPMI, diversity, seed stability" --> dyn["How did they shift? — atlas dynamics"]:::evidence
-    dyn -- "per-year share, bootstrap CIs" --> so["So what? — atlas render"]:::story
+    src[arXiv metadata snapshot]
+    src --> filt["Filter: category + keyword rule (configs/filter_*.yaml)"]:::data
+    filt --> emb["atlas embed: sentence embeddings, cached"]:::model
+    emb --> top["atlas topics: UMAP + HDBSCAN + c-TF-IDF, compare variants"]:::model
+    top --> reg["atlas register-topic: fit final model, human label check, register to MLflow"]:::model
+    reg --> sty["atlas story: 2D map + topic dynamics over time"]:::story
 ```
 
-| Question | CLI / DVC stage | Method | Report section |
-|---|---|---|---|
-| Which papers count? | `atlas filter` | category scope + documented rule; precision and recall on a labeled sample | §1 Corpus |
-| Can we trust the data? | `atlas quality` | dedup/versions, short/missing abstracts, LaTeX leakage, date-field choice, arXiv growth | §2 Data quality |
-| What is each paper about? | `atlas embed` | sentence-transformers, cached by model+revision+data hash, Matryoshka ablation | §3 Representation |
-| Which themes exist? | `atlas model` | UMAP-5D → HDBSCAN → CountVectorizer → c-TF-IDF | §4 Themes |
-| Are the themes real? | `atlas evaluate` | diversity, NPMI, seed stability, outlier rate, PCA control, human label check | §5 Evidence |
-| How did they shift? | `atlas dynamics` | per-year topic share with bootstrap CIs | §6 Shifts |
-| So what? | `atlas render` | static Plotly HTML report with headline findings | §7 Takeaways + Limitations |
+| Stage | Command | What it does |
+|---|---|---|
+| Filter | config, applied by every command below | category scope + keyword rule over title/abstract, defined in a YAML file (`configs/filter_medical_imaging.yaml` by default) — see ADR 0003, 0005 |
+| Data quality | `imaging_ai_atlas.data.quality` (library) | dedup, short/missing abstracts, LaTeX leakage, date-field anomalies — see `reports/data_quality.md` |
+| Embeddings | `atlas embed` | sentence-transformers, cached by model + revision + data hash, Matryoshka-dimension ablation — ADR 0004 |
+| Topic model comparison | `atlas topics` | UMAP (5D) → HDBSCAN → CountVectorizer → c-TF-IDF, compared across embedding variants (diversity, NPMI, outlier rate, seed stability) |
+| Topic model registration | `atlas register-topic` | fits the chosen primary model once, registers it as a standard MLflow artifact, writes a human coherence-check sample for the largest topics |
+| Story | `atlas story` | 2D topic map + topic-share-over-time charts, written to `reports/figures/` |
+
+Exploratory analysis of each stage's output lives in `notebooks/01_eda.ipynb`.
+
+## Changing the research topic
+
+The filter rule — which papers count as "in scope" — is a config, not code (ADR 0005). To point this
+pipeline at a different topic (e.g. a narrower clinical-imaging subtopic instead of medical imaging AI
+broadly):
+
+1. Write a new `configs/filter_<topic>.yaml` with a `category_scope` (arXiv categories) and
+   `keyword_patterns` (regex, OR'd together).
+2. Pass `--filter-config-path configs/filter_<topic>.yaml` to every `atlas` command.
+3. Measure precision/recall on a hand-labeled sample before trusting the new rule — same method as
+   ADR 0003, since a plausible-looking keyword list is not a validated one.
 
 ## Prerequisites
 
