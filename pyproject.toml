@@ -47,6 +47,8 @@ dev = [
     "deptry>=0.20",
     "vulture>=2.11",
     "nbstripout>=0.7",
+    "jupyter>=1.0",
+    "ipykernel>=6.29",
     "lefthook>=1.7",
 ]
 
@@ -140,7 +142,7 @@ DEP002 = [
     # sentence-transformers uses it internally.
     "einops", "transformers",
     "pytest", "pytest-cov", "ruff", "pyright", "deptry", "vulture", "nbstripout",
-    "lefthook",
+    "lefthook", "jupyter", "ipykernel",
 ]
 
 [tool.vulture]
