@@ -125,6 +125,9 @@ def plot_topic_dynamics(
     convergent lines would otherwise pile all their direct labels on top of each other.
     """
     filtered = share[share["year_total"] >= min_year_total]
+    # Hand-rolled aggregation over plain dicts rather than pandas groupby chains: the
+    # equivalent groupby/Series version doesn't survive pandas-stubs type checking without
+    # a dozen ignores, and these per-topic/per-year dicts feed straight into matplotlib.
     columns = filtered[["year", "topic_id", "count", "share"]]
     records: list[dict[str, int | float]] = columns.to_dict("records")  # type: ignore[assignment]
 
@@ -159,8 +162,6 @@ def plot_topic_dynamics(
     all_years = list(other_years)
     for i, topic_id in enumerate(highlighted):
         points = sorted(series_by_topic[topic_id])
-        if not points:
-            continue
         years = [p[0] for p in points]
         shares = [p[1] for p in points]
         all_years.extend(years)

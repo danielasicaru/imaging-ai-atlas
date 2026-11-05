@@ -28,6 +28,21 @@ app = typer.Typer(help="imaging-ai-atlas: a data story on a configurable researc
 _DEFAULT_FILTER_CONFIG = Path("configs/filter_medical_imaging.yaml")
 
 
+def _require_exists(path: Path, message: str) -> None:
+    """Fail fast with an actionable message when an input file is missing - every command
+    opens with a few of these, so the echo-then-Exit(1) pair lives in one place.
+    """
+    if not path.exists():
+        typer.echo(message, err=True)
+        raise typer.Exit(1)
+
+
+def _require_corpus_inputs(papers_path: Path, filter_config_path: Path) -> None:
+    """The two inputs every corpus-reading command needs before it can do anything."""
+    _require_exists(papers_path, f"No papers file at {papers_path} - run the ingest stage first.")
+    _require_exists(filter_config_path, f"No filter config at {filter_config_path}.")
+
+
 def _load_filtered_corpus(papers_path: Path, filter_config_path: Path) -> pd.DataFrame:
     """Every stage starts from the same filtered corpus - factored out so the filter
     config (which topic this run is about) is loaded and applied identically everywhere,
@@ -54,15 +69,8 @@ def embed(
     """Embed the filtered corpus with every model in `config_path`, caching to
     `cache_dir` and logging one MLflow run per (model, dims) combination.
     """
-    if not papers_path.exists():
-        typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
-        raise typer.Exit(1)
-    if not filter_config_path.exists():
-        typer.echo(f"No filter config at {filter_config_path}.", err=True)
-        raise typer.Exit(1)
-    if not config_path.exists():
-        typer.echo(f"No embed config at {config_path}.", err=True)
-        raise typer.Exit(1)
+    _require_corpus_inputs(papers_path, filter_config_path)
+    _require_exists(config_path, f"No embed config at {config_path}.")
 
     filtered = _load_filtered_corpus(papers_path, filter_config_path)
     typer.echo(f"Embedding {len(filtered)} filtered papers.")
@@ -84,15 +92,8 @@ def topics(
     (diversity, NPMI, outlier rate before/after, 5-seed ARI stability, runtime), logging
     one MLflow run per variant. Requires `atlas embed` to have been run first.
     """
-    if not papers_path.exists():
-        typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
-        raise typer.Exit(1)
-    if not filter_config_path.exists():
-        typer.echo(f"No filter config at {filter_config_path}.", err=True)
-        raise typer.Exit(1)
-    if not config_path.exists():
-        typer.echo(f"No topics config at {config_path}.", err=True)
-        raise typer.Exit(1)
+    _require_corpus_inputs(papers_path, filter_config_path)
+    _require_exists(config_path, f"No topics config at {config_path}.")
 
     filtered = _load_filtered_corpus(papers_path, filter_config_path)
     data_hash = corpus_hash(filtered)
@@ -127,12 +128,7 @@ def register_topic(
     it as a standard MLflow artifact, and write a human coherence-check sample for the
     `n_label_topics` largest topics. Requires `atlas embed` to have cached this variant.
     """
-    if not papers_path.exists():
-        typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
-        raise typer.Exit(1)
-    if not filter_config_path.exists():
-        typer.echo(f"No filter config at {filter_config_path}.", err=True)
-        raise typer.Exit(1)
+    _require_corpus_inputs(papers_path, filter_config_path)
     if labeling_sample_path.exists() and not force:
         existing = pd.read_csv(labeling_sample_path)
         has_labels = (
@@ -203,22 +199,15 @@ def story(
     dims: int = 64,
     seed: int = 0,
 ) -> None:
-    """Build the M5 2D topic map and topic-dynamics-over-time charts from the registered
+    """Build the 2D topic map and topic-dynamics-over-time charts from the registered
     nomic@64 topic model's saved assignments. Requires `atlas register-topic` to have run
     first.
     """
-    if not papers_path.exists():
-        typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
-        raise typer.Exit(1)
-    if not filter_config_path.exists():
-        typer.echo(f"No filter config at {filter_config_path}.", err=True)
-        raise typer.Exit(1)
-    if not assignments_path.exists():
-        typer.echo(
-            f"No topic assignments at {assignments_path} - run `atlas register-topic` first.",
-            err=True,
-        )
-        raise typer.Exit(1)
+    _require_corpus_inputs(papers_path, filter_config_path)
+    _require_exists(
+        assignments_path,
+        f"No topic assignments at {assignments_path} - run `atlas register-topic` first.",
+    )
 
     filtered = _load_filtered_corpus(papers_path, filter_config_path)
     data_hash = corpus_hash(filtered)
