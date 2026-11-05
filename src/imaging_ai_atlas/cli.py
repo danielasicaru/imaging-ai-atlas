@@ -6,7 +6,7 @@ import pandas as pd
 import typer
 
 from imaging_ai_atlas.data.clean_text import strip_latex
-from imaging_ai_atlas.data.filter import apply_filter
+from imaging_ai_atlas.data.filter import apply_filter, load_filter_config
 from imaging_ai_atlas.embed.config import load_embed_config
 from imaging_ai_atlas.embed.pipeline import corpus_hash, run_embedding_sweep
 from imaging_ai_atlas.story.dynamics import topic_share_by_year, topic_volume_by_year
@@ -23,7 +23,19 @@ from imaging_ai_atlas.topics.model import fit_topic_model
 from imaging_ai_atlas.topics.pipeline import evaluate_variant, load_variant_embeddings
 from imaging_ai_atlas.topics.registry import register_topic_model, save_topic_assignments
 
-app = typer.Typer(help="imaging-ai-atlas: a data story on medical-imaging AI research trends.")
+app = typer.Typer(help="imaging-ai-atlas: a data story on a configurable research topic.")
+
+_DEFAULT_FILTER_CONFIG = Path("configs/filter_medical_imaging.yaml")
+
+
+def _load_filtered_corpus(papers_path: Path, filter_config_path: Path) -> pd.DataFrame:
+    """Every stage starts from the same filtered corpus - factored out so the filter
+    config (which topic this run is about) is loaded and applied identically everywhere,
+    rather than four near-identical copies of the same two lines.
+    """
+    df = pd.read_parquet(papers_path)
+    config = load_filter_config(filter_config_path)
+    return df.loc[apply_filter(df, config)].reset_index(drop=True)
 
 
 @app.command()
@@ -36,20 +48,23 @@ def version() -> None:
 def embed(
     papers_path: Path = Path("data/interim/papers.parquet"),
     config_path: Path = Path("configs/embed.yaml"),
+    filter_config_path: Path = _DEFAULT_FILTER_CONFIG,
     cache_dir: Path = Path("data/interim/embeddings"),
 ) -> None:
-    """Embed the M2-filtered corpus with every model in `config_path`, caching to
+    """Embed the filtered corpus with every model in `config_path`, caching to
     `cache_dir` and logging one MLflow run per (model, dims) combination.
     """
     if not papers_path.exists():
         typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
         raise typer.Exit(1)
+    if not filter_config_path.exists():
+        typer.echo(f"No filter config at {filter_config_path}.", err=True)
+        raise typer.Exit(1)
     if not config_path.exists():
         typer.echo(f"No embed config at {config_path}.", err=True)
         raise typer.Exit(1)
 
-    df = pd.read_parquet(papers_path)
-    filtered = df.loc[apply_filter(df)].reset_index(drop=True)
+    filtered = _load_filtered_corpus(papers_path, filter_config_path)
     typer.echo(f"Embedding {len(filtered)} filtered papers.")
 
     config = load_embed_config(config_path)
@@ -62,6 +77,7 @@ def embed(
 def topics(
     papers_path: Path = Path("data/interim/papers.parquet"),
     config_path: Path = Path("configs/topics.yaml"),
+    filter_config_path: Path = _DEFAULT_FILTER_CONFIG,
     embeddings_dir: Path = Path("data/interim/embeddings"),
 ) -> None:
     """Fit + evaluate BERTopic on every cached embedding variant in `config_path`
@@ -71,12 +87,14 @@ def topics(
     if not papers_path.exists():
         typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
         raise typer.Exit(1)
+    if not filter_config_path.exists():
+        typer.echo(f"No filter config at {filter_config_path}.", err=True)
+        raise typer.Exit(1)
     if not config_path.exists():
         typer.echo(f"No topics config at {config_path}.", err=True)
         raise typer.Exit(1)
 
-    df = pd.read_parquet(papers_path)
-    filtered = df.loc[apply_filter(df)].reset_index(drop=True)
+    filtered = _load_filtered_corpus(papers_path, filter_config_path)
     data_hash = corpus_hash(filtered)
     typer.echo(f"Evaluating topic models on {len(filtered)} filtered papers.")
 
@@ -90,6 +108,7 @@ def topics(
 @app.command()
 def register_topic(
     papers_path: Path = Path("data/interim/papers.parquet"),
+    filter_config_path: Path = _DEFAULT_FILTER_CONFIG,
     embeddings_dir: Path = Path("data/interim/embeddings"),
     model_dir: Path = Path("data/interim/topic_model"),
     labeling_sample_path: Path = Path("data/interim/topic_labeling_sample.csv"),
@@ -111,6 +130,9 @@ def register_topic(
     if not papers_path.exists():
         typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
         raise typer.Exit(1)
+    if not filter_config_path.exists():
+        typer.echo(f"No filter config at {filter_config_path}.", err=True)
+        raise typer.Exit(1)
     if labeling_sample_path.exists() and not force:
         existing = pd.read_csv(labeling_sample_path)
         has_labels = (
@@ -126,8 +148,7 @@ def register_topic(
             )
             raise typer.Exit(1)
 
-    df = pd.read_parquet(papers_path)
-    filtered = df.loc[apply_filter(df)].reset_index(drop=True)
+    filtered = _load_filtered_corpus(papers_path, filter_config_path)
     data_hash = corpus_hash(filtered)
 
     variant = EmbeddingVariant(
@@ -170,6 +191,7 @@ def register_topic(
 @app.command()
 def story(
     papers_path: Path = Path("data/interim/papers.parquet"),
+    filter_config_path: Path = _DEFAULT_FILTER_CONFIG,
     embeddings_dir: Path = Path("data/interim/embeddings"),
     assignments_path: Path = Path("data/interim/topic_assignments.parquet"),
     labeling_sample_path: Path = Path("data/interim/topic_labeling_sample.csv"),
@@ -188,6 +210,9 @@ def story(
     if not papers_path.exists():
         typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
         raise typer.Exit(1)
+    if not filter_config_path.exists():
+        typer.echo(f"No filter config at {filter_config_path}.", err=True)
+        raise typer.Exit(1)
     if not assignments_path.exists():
         typer.echo(
             f"No topic assignments at {assignments_path} - run `atlas register-topic` first.",
@@ -195,8 +220,7 @@ def story(
         )
         raise typer.Exit(1)
 
-    df = pd.read_parquet(papers_path)
-    filtered = df.loc[apply_filter(df)].reset_index(drop=True)
+    filtered = _load_filtered_corpus(papers_path, filter_config_path)
     data_hash = corpus_hash(filtered)
 
     assignments = pd.read_parquet(assignments_path)

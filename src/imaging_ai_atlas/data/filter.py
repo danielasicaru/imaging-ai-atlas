@@ -1,56 +1,49 @@
 import re
+from pathlib import Path
 
 import pandas as pd
-
-# Categories where a medical-imaging AI paper could plausibly live. Deliberately broad —
-# this is the "could this paper be relevant at all" net, not the final answer. cs.CV alone
-# is almost entirely non-medical computer vision; the keyword rule below does the real
-# narrowing. eess.IV is kept separate in reporting (see reports/data_quality.md) because its
-# adoption curve is itself a category-introduction artifact, not organic growth.
-CATEGORY_SCOPE = frozenset({"eess.IV", "cs.CV", "q-bio.QM", "q-bio.TO", "physics.med-ph"})
-
-# Imaging modalities and clinical-imaging vocabulary. Intentionally conservative (misses are
-# expected and will be measured against the excluded pool) rather than overly broad (which
-# would need recall measured against a much larger labeled sample to catch false positives).
-_MODALITY_TERMS = [
-    r"MRI",
-    r"magnetic resonance imag\w*",
-    r"\bCT\b",
-    r"computed tomography",
-    r"\bX-ray\b",
-    r"radiograph\w*",
-    r"mammograph\w*",
-    r"ultrasound",
-    r"sonograph\w*",
-    r"PET scan",
-    r"PET/CT",
-    r"histopatholog\w*",
-    r"whole[- ]slide imag\w*",
-    r"endoscop\w*",
-    r"\bOCT\b",
-    r"optical coherence tomography",
-]
-_CLINICAL_TERMS = [
-    r"medical imag\w*",
-    r"clinical imag\w*",
-    r"radiolog\w*",
-    r"tumor segmentation",
-    r"lesion segmentation",
-    r"diagnos\w* imag\w*",
-]
-
-_KEYWORD_PATTERN_STR = "|".join(_MODALITY_TERMS + _CLINICAL_TERMS)
-_KEYWORD_PATTERN = re.compile(_KEYWORD_PATTERN_STR, re.IGNORECASE)
+import yaml
+from pydantic import BaseModel, field_validator
 
 
-def matches_filter(categories: list[str], title: str, abstract: str) -> bool:
-    """The baseline filter rule: in the category scope AND mentions imaging/clinical vocabulary."""
-    in_scope_category = any(cat in CATEGORY_SCOPE for cat in categories)
-    has_keyword = bool(_KEYWORD_PATTERN.search(f"{title} {abstract}"))
+class FilterConfig(BaseModel):
+    """A topic-domain filter rule: (category_scope AND any keyword_pattern) over title +
+    abstract. Parameterizing this (rather than hardcoding one domain's categories and
+    keywords as module constants) is what lets this project point at a different research
+    topic - e.g. cervical spine fracture classification instead of medical imaging AI -
+    via a new YAML file, with no code change.
+    """
+
+    name: str
+    category_scope: list[str]
+    keyword_patterns: list[str]
+
+    @field_validator("keyword_patterns")
+    @classmethod
+    def _patterns_must_compile(_cls, patterns: list[str]) -> list[str]:
+        for pattern in patterns:
+            re.compile(pattern)  # raises re.error with a clear message if malformed
+        return patterns
+
+    @property
+    def keyword_pattern_str(self) -> str:
+        return "|".join(self.keyword_patterns)
+
+
+def load_filter_config(path: Path) -> FilterConfig:
+    with path.open(encoding="utf-8") as f:
+        raw = yaml.safe_load(f)
+    return FilterConfig.model_validate(raw)
+
+
+def matches_filter(categories: list[str], title: str, abstract: str, config: FilterConfig) -> bool:
+    """The baseline filter rule: in the category scope AND mentions the configured vocabulary."""
+    in_scope_category = any(cat in config.category_scope for cat in categories)
+    has_keyword = bool(re.search(config.keyword_pattern_str, f"{title} {abstract}", re.IGNORECASE))
     return in_scope_category and has_keyword
 
 
-def apply_filter(df: pd.DataFrame) -> pd.Series:
+def apply_filter(df: pd.DataFrame, config: FilterConfig) -> pd.Series:
     """Boolean mask over `df` for the baseline filter rule.
 
     Keyword matching is vectorized (str.contains over the whole column); category-list
@@ -58,6 +51,9 @@ def apply_filter(df: pd.DataFrame) -> pd.Series:
     this set" operation without exploding the column first — not worth it for one pass.
     """
     title_and_abstract = df["title"] + " " + df["abstract"]
-    has_keyword = title_and_abstract.str.contains(_KEYWORD_PATTERN_STR, case=False, regex=True)
-    in_scope_category = df["categories"].apply(lambda cats: any(c in CATEGORY_SCOPE for c in cats))
+    has_keyword = title_and_abstract.str.contains(
+        config.keyword_pattern_str, case=False, regex=True
+    )
+    category_scope = frozenset(config.category_scope)
+    in_scope_category = df["categories"].apply(lambda cats: any(c in category_scope for c in cats))
     return in_scope_category & has_keyword

@@ -1,0 +1,46 @@
+# Baseline filter rule for the "medical imaging AI" topic domain - see ADR 0003 for the
+# precision/recall numbers this rule was measured against, and ADR 0005 for why this is a
+# config file rather than hardcoded constants.
+name: medical-imaging
+
+# Categories where a medical-imaging AI paper could plausibly live. Deliberately broad -
+# this is the "could this paper be relevant at all" net, not the final answer. cs.CV alone
+# is almost entirely non-medical computer vision; the keyword rule below does the real
+# narrowing. eess.IV is kept separate in reporting (see reports/data_quality.md) because
+# its adoption curve is itself a category-introduction artifact, not organic growth.
+category_scope:
+  - eess.IV
+  - cs.CV
+  - q-bio.QM
+  - q-bio.TO
+  - physics.med-ph
+
+# Imaging modalities and clinical-imaging vocabulary. Intentionally conservative (misses
+# are expected and measured against the excluded pool) rather than overly broad (which
+# would need recall measured against a much larger labeled sample to catch false
+# positives). Case-insensitive; `\w*` suffixes catch plural/adjective forms.
+keyword_patterns:
+  # modality terms
+  - "MRI"
+  - "magnetic resonance imag\\w*"
+  - "\\bCT\\b"
+  - "computed tomography"
+  - "\\bX-ray\\b"
+  - "radiograph\\w*"
+  - "mammograph\\w*"
+  - "ultrasound"
+  - "sonograph\\w*"
+  - "PET scan"
+  - "PET/CT"
+  - "histopatholog\\w*"
+  - "whole[- ]slide imag\\w*"
+  - "endoscop\\w*"
+  - "\\bOCT\\b"
+  - "optical coherence tomography"
+  # clinical terms
+  - "medical imag\\w*"
+  - "clinical imag\\w*"
+  - "radiolog\\w*"
+  - "tumor segmentation"
+  - "lesion segmentation"
+  - "diagnos\\w* imag\\w*"
