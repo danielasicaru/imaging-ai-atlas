@@ -2,6 +2,7 @@ import re
 
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from imaging_ai_atlas.data.filter import (
     FilterConfig,
@@ -93,3 +94,16 @@ def test_load_filter_config_round_trips_through_yaml(tmp_path) -> None:
 def test_filter_config_rejects_a_malformed_regex_pattern() -> None:
     with pytest.raises(re.error):
         FilterConfig(name="broken", category_scope=["eess.IV"], keyword_patterns=["(unclosed"])
+
+
+def test_filter_config_rejects_an_empty_category_scope() -> None:
+    with pytest.raises(ValidationError):
+        FilterConfig(name="broken", category_scope=[], keyword_patterns=["MRI"])
+
+
+def test_filter_config_rejects_empty_keyword_patterns() -> None:
+    # An empty list would otherwise join to the empty-string regex, which re.search and
+    # str.contains both match against every string - silently turning the filter into
+    # "category scope only" rather than raising, if this weren't rejected.
+    with pytest.raises(ValidationError):
+        FilterConfig(name="broken", category_scope=["eess.IV"], keyword_patterns=[])

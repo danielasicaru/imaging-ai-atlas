@@ -18,6 +18,18 @@ class FilterConfig(BaseModel):
     category_scope: list[str]
     keyword_patterns: list[str]
 
+    @field_validator("category_scope", "keyword_patterns")
+    @classmethod
+    def _lists_must_be_non_empty(_cls, values: list[str]) -> list[str]:
+        if not values:
+            raise ValueError(
+                "must be non-empty - an empty category_scope rejects every row (silently "
+                "fails closed), but an empty keyword_patterns joins to the empty regex, "
+                "which re.search/str.contains match against *any* string (silently fails "
+                "open, accepting everything in-category). Neither is ever intended."
+            )
+        return values
+
     @field_validator("keyword_patterns")
     @classmethod
     def _patterns_must_compile(_cls, patterns: list[str]) -> list[str]:

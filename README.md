@@ -37,8 +37,8 @@ Exploratory analysis of each stage's output lives in `notebooks/01_eda.ipynb`.
 
 ## Running the pipeline
 
-Each command reads the previous stage's output and writes its own under `data/interim/`
-or `reports/`, so they run in order:
+Each command requires the previous one's output and checks for it on startup (clear error
+if missing), so they must run in this order:
 
 ```bash
 atlas embed           # cache sentence embeddings for every configured model/dims
