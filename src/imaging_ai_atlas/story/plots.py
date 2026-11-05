@@ -173,21 +173,21 @@ def plot_topic_dynamics(
     label_x = max_year + 1.5
     ax.set_xlim(right=label_x + 4)
 
-    # Anchor each label's slot at its own real last-share value, then nudge only enough to
-    # deconflict from other labels (via the same spread heuristic used on the topic map) -
-    # ranking labels by share and spacing them evenly across the *entire* y-range would
-    # draw long diagonal leader lines from a low real value up to a high slot position,
-    # which reads as a fabricated trend rather than a label placement, especially
-    # misleading on a chart whose whole point is separating real signal from noise.
-    entries.sort(key=lambda e: e[3], reverse=True)
+    # Anchor each label's slot at its own real last-share value, nudged up only enough to
+    # clear the next label below it in sorted order (a minimal-total-displacement
+    # monotonic stack, not the topic map's all-pairs spread) - ranking labels by share and
+    # spacing them evenly across the *entire* y-range would draw long diagonal leader
+    # lines from a low real value up to a high slot position, which reads as a fabricated
+    # trend rather than a label placement, especially misleading on a chart whose whole
+    # point is separating real signal from noise.
+    entries.sort(key=lambda e: e[3])
     y_min, y_max = ax.get_ylim()
-    min_gap = (y_max - y_min) / 20
-    label_starts = [(label_x, e[3]) for e in entries]
-    label_positions = _spread_labels(label_starts, min_gap=min_gap, x_gap=label_x + 1)
+    min_gap = (y_max - y_min) / 45
+    slot_ys: list[float] = []
+    for _, _, _, last_share in entries:
+        slot_ys.append(last_share if not slot_ys else max(last_share, slot_ys[-1] + min_gap))
 
-    for (color, label, last_year, last_share), (_, slot_y) in zip(
-        entries, label_positions, strict=True
-    ):
+    for (color, label, last_year, last_share), slot_y in zip(entries, slot_ys, strict=True):
         ax.annotate(
             label,
             xy=(last_year, last_share),
