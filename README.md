@@ -35,6 +35,21 @@ flowchart LR
 
 Exploratory analysis of each stage's output lives in `notebooks/01_eda.ipynb`.
 
+## Running the pipeline
+
+Each command reads the previous stage's output and writes its own under `data/interim/`
+or `reports/`, so they run in order:
+
+```bash
+atlas embed           # cache sentence embeddings for every configured model/dims
+atlas topics          # compare topic models across embedding variants
+atlas register-topic  # fit + register the chosen primary topic model
+atlas story           # build the 2D topic map and topic-dynamics charts
+```
+
+All four accept `--filter-config-path` to point at a different research-topic domain (see
+below). `atlas --help` and `atlas <command> --help` list every option and default.
+
 ## Changing the research topic
 
 The filter rule — which papers count as "in scope" — is a config, not code (ADR 0005). To point this
