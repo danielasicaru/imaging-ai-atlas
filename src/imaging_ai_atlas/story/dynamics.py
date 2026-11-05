@@ -17,8 +17,10 @@ def topic_share_by_year(volume: pd.DataFrame) -> pd.DataFrame:
     """Each topic's count as a fraction of that year's total (non-outlier) paper count -
     volume alone conflates "this topic grew" with "the whole corpus grew that year" (arXiv
     submissions trend upward over time regardless of topic), share disentangles the two.
+    `year_total` is kept (not dropped) so callers can filter out years with too few papers
+    to be a meaningful share - a handful of documents gives wild, meaningless swings.
     """
     merged = volume.copy()
     merged["year_total"] = merged.groupby("year")["count"].transform("sum")
     merged["share"] = merged["count"] / merged["year_total"]
-    return merged.drop(columns="year_total")
+    return merged
