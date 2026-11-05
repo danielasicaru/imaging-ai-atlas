@@ -100,6 +100,9 @@ def register_topic(
     max_len: int = 256,
     dims: int = 64,
     n_label_topics: int = 30,
+    force: bool = typer.Option(
+        False, "--force", help="Overwrite an existing, human-labeled labeling sample CSV."
+    ),
 ) -> None:
     """Fit the chosen primary topic model (nomic@64 per ADR 0004) once at seed 0, register
     it as a standard MLflow artifact, and write a human coherence-check sample for the
@@ -108,6 +111,20 @@ def register_topic(
     if not papers_path.exists():
         typer.echo(f"No papers file at {papers_path} - run the ingest stage first.", err=True)
         raise typer.Exit(1)
+    if labeling_sample_path.exists() and not force:
+        existing = pd.read_csv(labeling_sample_path)
+        has_labels = (
+            "coherent" in existing.columns
+            and existing["coherent"].astype(str).str.strip().ne("").any()
+        )
+        if has_labels:
+            typer.echo(
+                f"{labeling_sample_path} already has human-filled labels - rerunning would "
+                "overwrite them (this command always regenerates the file from scratch). "
+                "Back it up, or rerun with --force to overwrite anyway.",
+                err=True,
+            )
+            raise typer.Exit(1)
 
     df = pd.read_parquet(papers_path)
     filtered = df.loc[apply_filter(df)].reset_index(drop=True)

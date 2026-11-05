@@ -61,15 +61,21 @@ def plot_topic_map(
     other_mask = ~np.isin(topics_arr, highlighted)
     ax.scatter(coords[other_mask, 0], coords[other_mask, 1], c=_GREY, s=4, alpha=0.4, linewidths=0)
 
+    y_span = coords[:, 1].max() - coords[:, 1].min()
+    # Offset every label above its own centroid before spreading, not just when it
+    # collides with another label's text - otherwise an uncontested label sits directly
+    # on top of its own cluster's dots, which is the common case, not the exception.
+    own_offset = y_span / 25
     centroids = []
+    label_starts = []
     for topic_id in highlighted:
         mask = topics_arr == topic_id
         cx, cy = coords[mask].mean(axis=0)
         centroids.append((float(cx), float(cy)))
+        label_starts.append((float(cx), float(cy) + own_offset))
 
     x_span = coords[:, 0].max() - coords[:, 0].min()
-    y_span = coords[:, 1].max() - coords[:, 1].min()
-    label_positions = _spread_labels(centroids, min_gap=y_span / 30, x_gap=x_span / 6)
+    label_positions = _spread_labels(label_starts, min_gap=y_span / 30, x_gap=x_span / 6)
 
     for i, topic_id in enumerate(highlighted):
         mask = topics_arr == topic_id
@@ -167,11 +173,21 @@ def plot_topic_dynamics(
     label_x = max_year + 1.5
     ax.set_xlim(right=label_x + 4)
 
+    # Anchor each label's slot at its own real last-share value, then nudge only enough to
+    # deconflict from other labels (via the same spread heuristic used on the topic map) -
+    # ranking labels by share and spacing them evenly across the *entire* y-range would
+    # draw long diagonal leader lines from a low real value up to a high slot position,
+    # which reads as a fabricated trend rather than a label placement, especially
+    # misleading on a chart whose whole point is separating real signal from noise.
     entries.sort(key=lambda e: e[3], reverse=True)
     y_min, y_max = ax.get_ylim()
-    n = len(entries)
-    for i, (color, label, last_year, last_share) in enumerate(entries):
-        slot_y = y_max - (i + 0.5) * (y_max - y_min) / max(n, 1)
+    min_gap = (y_max - y_min) / 20
+    label_starts = [(label_x, e[3]) for e in entries]
+    label_positions = _spread_labels(label_starts, min_gap=min_gap, x_gap=label_x + 1)
+
+    for (color, label, last_year, last_share), (_, slot_y) in zip(
+        entries, label_positions, strict=True
+    ):
         ax.annotate(
             label,
             xy=(last_year, last_share),
