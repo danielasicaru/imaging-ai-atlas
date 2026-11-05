@@ -16,8 +16,8 @@ from imaging_ai_atlas.topics.stability import mean_pairwise_ari
 def load_variant_embeddings(
     variant: EmbeddingVariant, data_hash: str, cache_dir: Path
 ) -> np.ndarray:
-    """Look up an embedding already produced by `atlas embed` (M3), using the same cache
-    key scheme - this module never computes embeddings itself.
+    """Look up an embedding already produced by `atlas embed`, using the same cache key
+    scheme - this module never computes embeddings itself.
     """
     key = cache_key(
         variant.model_name,

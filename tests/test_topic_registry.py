@@ -35,8 +35,8 @@ def test_register_topic_model_logs_artifacts_and_tags(tmp_path: Path) -> None:
     assert runs.iloc[0]["tags.git_sha"] == "abc123"
     assert (tmp_path / "model_dir" / "model.safetensors").exists()
     # The embedding model must not be bundled - inference on new documents has to go
-    # through M3's pinned loader (same revision/task_prefix), not whatever BERTopic would
-    # try to download from a bare model-name pointer.
+    # through the pinned embedding loader (same revision/task_prefix), not whatever
+    # BERTopic would try to download from a bare model-name pointer.
     assert fake_model.save_kwargs["save_embedding_model"] is False
 
 

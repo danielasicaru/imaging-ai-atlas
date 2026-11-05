@@ -5,10 +5,11 @@
 
 ## Context
 
-M3 produced 7 embedding variants (MiniLM, SPECTER, and nomic-embed-text-v1.5 Matryoshka-truncated
-to 64/128/256/512/768 dims). M4 needed to pick one of them to carry forward as the primary
-embedding for the topic model that the rest of the project (M5 dynamics, M6 story) builds on,
-backed by real comparison numbers rather than a model-card preference.
+The embedding sweep produced 7 variants (MiniLM, SPECTER, and nomic-embed-text-v1.5
+Matryoshka-truncated to 64/128/256/512/768 dims). One of them needed to be picked to carry
+forward as the primary embedding for the topic model that the rest of the project
+(dynamics, story) builds on, backed by real comparison numbers rather than a model-card
+preference.
 
 ## Decision
 
@@ -16,10 +17,11 @@ backed by real comparison numbers rather than a model-card preference.
 CountVectorizer -> c-TF-IDF as the topic model, as specified in `configs/topics.yaml`.
 
 Chosen as a deliberate tradeoff, not the single best number on every metric: nomic@64 has the
-highest topic diversity (0.696) and the smallest embedding (fastest/cheapest for the full M5/M6
-pipeline), with stability (ARI 0.632) a close second to SPECTER's best. This directly answers the
-original M3 question, "how many dimensions does this corpus need?" — the answer is relatively few;
-truncating nomic from 768 to 64 dims did not meaningfully cost diversity or stability.
+highest topic diversity (0.696) and the smallest embedding (fastest/cheapest for the downstream
+dynamics and story stages), with stability (ARI 0.632) a close second to SPECTER's best. This
+directly answers the original question, "how many dimensions does this corpus need?" — the answer
+is relatively few; truncating nomic from 768 to 64 dims did not meaningfully cost diversity or
+stability.
 
 ## Measurement
 
@@ -50,9 +52,9 @@ treated as a deciding metric here.
 flagged as suspicious rather than accepted uncritically; this means every document, however
 marginal, got force-assigned to its nearest topic. The *before* rate (31.9%-41.7% across variants)
 is the more honest signal of how much HDBSCAN actually clustered confidently; the *after* number
-is a methodological artifact of the reduction strategy, not evidence of a cleaner corpus. The M6
-report must present outlier rates as the before number with the reduction step's effect described,
-not quote 0% as a quality result.
+is a methodological artifact of the reduction strategy, not evidence of a cleaner corpus. The
+final report must present outlier rates as the before number with the reduction step's effect
+described, not quote 0% as a quality result.
 
 **PCA-5D control** (same nomic@64 embedding, PCA instead of UMAP, otherwise identical pipeline):
 
@@ -79,10 +81,10 @@ a reasonable number of topics to be a sane comparison at all.
 ## Consequences
 
 - `configs/topics.yaml`'s `embedding_variants` list stays as the full 7-way comparison set
-  (useful ablation evidence for the report); a separate, simpler primary-pipeline config will
-  point M5/M6 at nomic@64 specifically.
-- The outlier-rate caveat above must carry into the M6 report's Limitations section, not be
-  silently dropped in favor of the cleaner-looking 0% post-reduction number.
+  (useful ablation evidence for the report); the primary pipeline (`atlas register-topic`,
+  `atlas story`) points at nomic@64 specifically.
+- The outlier-rate caveat above must carry into the final report's Limitations section, not
+  be silently dropped in favor of the cleaner-looking 0% post-reduction number.
 - If recall/topic quality concerns arise later that specifically implicate low dimensionality,
   revisit by comparing nomic@64 against nomic@256 on the human-labeled 30-topic check (not done
   yet) before assuming 64 is adequate everywhere.

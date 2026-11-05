@@ -23,10 +23,10 @@ def build_topic_label_sample(
 ) -> pd.DataFrame:
     """The `n_topics` largest real topics (an incoherent large topic damages the overall
     story more than an incoherent small one) with top keywords and example documents, for
-    a human coherence spot-check - same spirit as M2's labeling CSV, but for topics rather
-    than filter decisions. The outlier bucket (-1) is excluded, it isn't a topic. Ties in
-    size are broken by ascending topic_id, so the selection is fully deterministic rather
-    than relying on `value_counts`'s incidental tie order.
+    a human coherence spot-check - same spirit as the filter stage's labeling CSV, but for
+    topics rather than filter decisions. The outlier bucket (-1) is excluded, it isn't a
+    topic. Ties in size are broken by ascending topic_id, so the selection is fully
+    deterministic rather than relying on `value_counts`'s incidental tie order.
     """
     sizes: dict[int, int] = pd.Series(topics).value_counts().to_dict()
     top_ids = sorted((t for t in sizes if t != -1), key=lambda t: (-sizes[t], t))[:n_topics]

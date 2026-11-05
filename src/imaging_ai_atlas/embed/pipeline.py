@@ -29,7 +29,7 @@ def run_embedding_sweep(
 ) -> None:
     """Embed `df` with one model config across all its `dims`, caching each result and
     logging one MLflow run per (model, dims) combination. `df` must already be the
-    filtered, deduplicated corpus to embed - this function doesn't apply the M2 filter.
+    filtered, deduplicated corpus to embed - this function doesn't apply the topic filter.
 
     The model only ever runs once, at full dimension: a Matryoshka model's lower-dim
     variants are truncations of that one embedding, not separate encode passes - encoding

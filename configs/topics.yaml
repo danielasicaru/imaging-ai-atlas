@@ -1,4 +1,4 @@
-# M4 topic-model comparison: one BERTopic fit (+ 5-seed stability refits) per embedding
+# Topic-model comparison: one BERTopic fit (+ 5-seed stability refits) per embedding
 # variant already produced by `atlas embed` (see configs/embed.yaml). Variant fields here
 # must match the embed config exactly - they're used to look up the same cache key, not to
 # re-embed anything.

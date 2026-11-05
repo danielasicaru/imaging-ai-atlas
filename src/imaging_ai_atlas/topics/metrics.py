@@ -53,12 +53,12 @@ def npmi_coherence(topic_words: list[list[str]], tokenized_docs: list[list[str]]
     """Normalized Pointwise Mutual Information coherence (gensim's c_npmi) for a set of
     topics against the corpus they were fit on. Correlates only weakly with human judgment
     of topic quality (Lau et al. findings consistently cited in the topic-modeling
-    literature) - a sanity signal, not a substitute for the human label check in M4.
+    literature) - a sanity signal, not a substitute for a human coherence check.
 
     Returns NaN (rather than raising) if gensim can't compute coherence for this
     topic/corpus combination - a known failure mode when a topic's words never co-occur
     in any document window (sparse/tiny corpora). Not hit by this project's real runs so
-    far, but a future corpus (e.g. PubMed in M7) could be sparser.
+    far, but a sparser future corpus could trigger it.
     """
     dictionary = Dictionary(tokenized_docs)
     try:

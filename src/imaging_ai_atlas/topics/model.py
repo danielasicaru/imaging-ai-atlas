@@ -52,8 +52,8 @@ def _build_topic_model(reducer: DimensionalityReducer, config: TopicModelConfig)
 def fit_topic_model(
     embeddings: np.ndarray, texts: list[str], seed: int, config: TopicModelConfig
 ) -> tuple[BERTopic, list[int]]:
-    """Fit a topic model on pre-computed embeddings (from the M3 cache) and raw texts
-    (for c-TF-IDF/keyword extraction - a separate concern from what was embedded).
+    """Fit a topic model on pre-computed embeddings (from the embedding cache) and raw
+    texts (for c-TF-IDF/keyword extraction - a separate concern from what was embedded).
     Fixing UMAP's `random_state` disables its parallelism, a documented tradeoff for
     reproducibility, not an oversight.
     """

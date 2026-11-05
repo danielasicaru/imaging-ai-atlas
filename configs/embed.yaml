@@ -1,4 +1,4 @@
-# M3 embedding sweep: a general baseline, a scientific-domain model, and a Matryoshka-
+# Embedding sweep: a general baseline, a scientific-domain model, and a Matryoshka-
 # trained model ablated across dims. Validated against each model's own docs before
 # pinning here, not guessed:
 #   - sentence-transformers/all-MiniLM-L6-v2: general-purpose, 384-dim, no task prefix.

@@ -5,8 +5,9 @@ from pydantic import BaseModel
 
 
 class UmapConfig(BaseModel):
-    # n_components=5 is for clustering, not the 2D display map (that's a separate M5 call -
-    # see the kickoff plan's UMAP-5D-for-clustering vs UMAP-2D-for-display distinction.
+    # n_components=5 is for clustering, not the 2D display map - that's a separate UMAP
+    # call (story/map2d.py), tuned for human-readable layout rather than HDBSCAN's
+    # density assumptions.
     n_components: int = 5
     n_neighbors: int = 15
     min_dist: float = 0.0
@@ -35,8 +36,8 @@ class TopicModelConfig(BaseModel):
 
 
 class EmbeddingVariant(BaseModel):
-    """One (model, dims) combination already produced by the M3 embedding sweep - the
-    cache key fields needed to look it up, not the embedding data itself.
+    """One (model, dims) combination already produced by `atlas embed` - the cache key
+    fields needed to look it up, not the embedding data itself.
     """
 
     model_name: str

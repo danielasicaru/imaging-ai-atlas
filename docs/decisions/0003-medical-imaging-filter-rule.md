@@ -7,7 +7,7 @@
 
 The corpus (3,233,527 papers, all of arXiv) is far larger than the "medical-imaging AI" scope this
 project tells a story about. A filter rule is needed to cut it down, and its precision and recall need
-measuring on a hand-labeled sample before trusting it for the rest of the pipeline (§M2 of the plan).
+measuring on a hand-labeled sample before trusting it for the rest of the pipeline.
 
 Candidate rules, cheapest to most expensive: category-only, category + keyword, embedding-similarity
 classifier. The plan was to start with category + keyword and escalate only if precision/recall fell
@@ -57,14 +57,14 @@ papers found in the 100-row excluded-pool sample.
 |---|---|---|
 | Category-only (no keyword) | Simpler, higher recall by construction | Precision would collapse — cs.CV alone is mostly non-medical vision; not measured, but expected well below 0.85 given the keyword rule is already doing the real work |
 | Embedding-similarity classifier | Could improve recall, not threshold-brittle like regex | Not needed: precision already clears 0.85; recall's uncertainty here comes from sample size, not rule quality, so a fancier rule wouldn't fix the measurement problem |
-| Larger excluded-pool sample (e.g. 500-1000) | Would tighten the recall CI enough to actually distinguish "misses nothing" from "misses a few percent" | More hand-labeling; deferred, not blocking M2 since precision is the metric that gated escalation |
+| Larger excluded-pool sample (e.g. 500-1000) | Would tighten the recall CI enough to actually distinguish "misses nothing" from "misses a few percent" | More hand-labeling; deferred, since precision is the metric that gated escalation |
 
 ## Consequences
 
 - The baseline category + keyword rule stands; no escalation to an embedding classifier.
 - Recall is reported as **unresolved, not measured-and-good** — the report (§5, Evidence) must state
   this plainly rather than quoting the 1.0 point estimate unqualified. This is a limitation to carry
-  into the final story's "Limitations & ethics" section (M6), not a solved question.
+  into the final story's "Limitations & ethics" section, not a solved question.
 - If recall becomes load-bearing later (e.g. a reviewer questions whether a known theme is
   under-represented), revisit by labeling a larger excluded-pool sample rather than re-deriving a point
   estimate from n=100.
