@@ -35,6 +35,16 @@ flowchart LR
 
 Exploratory analysis of each stage's output lives in `notebooks/01_eda.ipynb`.
 
+## So what?
+
+![Topic map](reports/figures/topic_map.png)
+
+The full write-up - corpus size, data-quality findings, why this embedding and topic model
+were chosen, the 30 human-reviewed themes, filter precision/recall, and which themes are
+rising or fading over time (with uncertainty, not just eyeballing a chart) - is in
+[`reports/report.md`](reports/report.md), including a Limitations & ethics section that
+states plainly what this project does *not* know (filter recall, in particular).
+
 ## Running the pipeline
 
 Each command requires the previous one's output and checks for it on startup (clear error
