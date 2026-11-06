@@ -9,7 +9,12 @@ from imaging_ai_atlas.data.clean_text import strip_latex
 from imaging_ai_atlas.data.filter import apply_filter, load_filter_config
 from imaging_ai_atlas.embed.config import load_embed_config
 from imaging_ai_atlas.embed.pipeline import corpus_hash, run_embedding_sweep
-from imaging_ai_atlas.story.dynamics import topic_share_by_year, topic_volume_by_year
+from imaging_ai_atlas.story.dynamics import (
+    bootstrap_topic_share,
+    rank_topics_by_slope,
+    topic_share_by_year,
+    topic_volume_by_year,
+)
 from imaging_ai_atlas.story.labels import load_topic_labels
 from imaging_ai_atlas.story.map2d import project_2d
 from imaging_ai_atlas.story.plots import plot_topic_dynamics, plot_topic_map
@@ -192,6 +197,8 @@ def story(
     assignments_path: Path = Path("data/interim/topic_assignments.parquet"),
     labeling_sample_path: Path = Path("data/interim/topic_labeling_sample.csv"),
     figures_dir: Path = Path("reports/figures"),
+    dynamics_summary_path: Path = Path("reports/topic_dynamics_summary.csv"),
+    n_bootstrap_iterations: int = 1000,
     model_name: str = "nomic-ai/nomic-embed-text-v1.5",
     revision: str = "e9b6763023c676ca8431644204f50c2b100d9aab",
     task_prefix: str = "clustering: ",
@@ -200,8 +207,9 @@ def story(
     seed: int = 0,
 ) -> None:
     """Build the 2D topic map and topic-dynamics-over-time charts from the registered
-    nomic@64 topic model's saved assignments. Requires `atlas register-topic` to have run
-    first.
+    nomic@64 topic model's saved assignments, plus a bootstrapped rising/fading topic
+    ranking written to `dynamics_summary_path`. Requires `atlas register-topic` to have
+    run first.
     """
     _require_corpus_inputs(papers_path, filter_config_path)
     _require_exists(
@@ -239,6 +247,15 @@ def story(
     share = topic_share_by_year(volume)
 
     topic_labels = load_topic_labels(labeling_sample_path) if labeling_sample_path.exists() else {}
+
+    typer.echo(
+        f"Bootstrapping topic-share confidence intervals ({n_bootstrap_iterations} iterations)..."
+    )
+    bootstrap_shares = bootstrap_topic_share(topics, years, n_iterations=n_bootstrap_iterations)
+    ranking = rank_topics_by_slope(share, bootstrap_shares, topic_labels)
+    dynamics_summary_path.parent.mkdir(parents=True, exist_ok=True)
+    ranking.to_csv(dynamics_summary_path, index=False)
+    typer.echo(f"Wrote rising/fading topic ranking to {dynamics_summary_path}")
 
     figures_dir.mkdir(parents=True, exist_ok=True)
     plot_topic_map(coords, topics, topic_labels, figures_dir / "topic_map.png")
