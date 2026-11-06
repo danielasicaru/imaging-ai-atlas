@@ -37,7 +37,9 @@ Exploratory analysis of each stage's output lives in `notebooks/01_eda.ipynb`.
 
 ## So what?
 
-![Topic map](reports/figures/topic_map.png)
+![2D UMAP scatter plot of the filtered medical-imaging-AI corpus, with its 8 largest
+research themes colored and labeled and every other paper shown in
+grey](reports/figures/topic_map.png)
 
 The full write-up - corpus size, data-quality findings, why this embedding and topic model
 were chosen, the 30 human-reviewed themes, filter precision/recall, and which themes are

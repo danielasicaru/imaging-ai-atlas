@@ -50,7 +50,11 @@ topics with 81.2% outliers.
 
 ## 4. Themes
 
-![Topic map](figures/topic_map.png)
+![2D UMAP scatter plot of all 30,872 filtered papers, with the 8 largest topics colored
+and direct-labeled (brain tumor MRI, retinal OCT/fundus imaging, transformer/U-Net
+segmentation architectures, cardiac MRI, accelerated MRI reconstruction, breast
+cancer/mammography, COVID-19 chest X-ray/CT, and ultrasound image formation), and every
+other paper shown in grey](figures/topic_map.png)
 
 30 of the largest topics were human-reviewed for coherence; all 30 were marked coherent,
 covering themes including brain tumor MRI, retinal OCT/fundus imaging, cardiac MRI, breast
@@ -79,7 +83,11 @@ The baseline filter rule passes 30,872 of 3,233,527 papers (~1.0% of all of arXi
 
 ## 6. Shifts
 
-![Topic dynamics](figures/topic_dynamics.png)
+![Line chart of each of the 8 largest topics' share of the corpus by year (1997-2026,
+years with fewer than 20 papers omitted): brain tumor MRI, retinal OCT/fundus imaging,
+transformer/U-Net segmentation architectures, cardiac MRI, accelerated MRI reconstruction,
+COVID-19 chest X-ray/CT, breast cancer/mammography, and ultrasound image formation, plus a
+grey line for all other topics combined](figures/topic_dynamics.png)
 
 Per-year topic share was bootstrapped (1,000 resamples within each year) to put a
 confidence interval on each of the 30 coherent topics' trend, ranked by the slope of

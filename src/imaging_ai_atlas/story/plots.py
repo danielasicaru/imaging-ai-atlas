@@ -14,8 +14,28 @@ import matplotlib.pyplot as plt
 # else, direct labels instead of a legend (a legend forces the reader to look back and
 # forth; a label placed right at the data point doesn't), no interactivity in static
 # figures since there's no hover affordance to add information through.
-_HIGHLIGHT_CMAP = plt.get_cmap("tab10")
+#
+# Okabe & Ito's 8-colour qualitative palette (2008, https://jfly.uni-koeln.de/color/) -
+# chosen over matplotlib's default tab10 because tab10 is not colorblind-safe (its
+# red/green pair is hard to distinguish under red-green color vision deficiency); Okabe-Ito
+# is the standard reference palette for this. 8 colors caps how many topics either chart
+# can highlight at once with a guaranteed-distinct color (see `n_highlighted` defaults
+# below) - cycling past 8 would silently repeat a color across two different topics.
+_HIGHLIGHT_COLORS = [
+    "#E69F00",  # orange
+    "#56B4E9",  # sky blue
+    "#009E73",  # bluish green
+    "#F0E442",  # yellow
+    "#0072B2",  # blue
+    "#D55E00",  # vermillion
+    "#CC79A7",  # reddish purple
+    "#000000",  # black
+]
 _GREY = "#bbbbbb"
+
+
+def _highlight_color(i: int) -> str:
+    return _HIGHLIGHT_COLORS[i % len(_HIGHLIGHT_COLORS)]
 
 
 def _spread_labels(
@@ -46,7 +66,7 @@ def plot_topic_map(
     topics: list[int],
     topic_labels: dict[int, str],
     save_path: Path,
-    n_highlighted: int = 10,
+    n_highlighted: int = 8,
 ) -> None:
     """2D scatter of every document, colored by its topic for the `n_highlighted` largest
     topics (direct-labeled near each topic's centroid, nudged apart where clusters sit
@@ -79,7 +99,7 @@ def plot_topic_map(
 
     for i, topic_id in enumerate(highlighted):
         mask = topics_arr == topic_id
-        color = _HIGHLIGHT_CMAP(i % _HIGHLIGHT_CMAP.N)
+        color = _highlight_color(i)
         ax.scatter(coords[mask, 0], coords[mask, 1], c=[color], s=6, alpha=0.8, linewidths=0)
         label = topic_labels.get(topic_id, f"Topic {topic_id}")
         cx, cy = centroids[i]
@@ -155,7 +175,7 @@ def plot_topic_dynamics(
     other_shares = [other_by_year[y] for y in other_years]
     ax.plot(other_years, other_shares, color=_GREY, linewidth=1.5)
 
-    entries: list[tuple[str | tuple[float, ...], str, float, float]] = []
+    entries: list[tuple[str, str, float, float]] = []
     if other_years:
         entries.append((_GREY, "other topics", other_years[-1], other_shares[-1]))
 
@@ -165,7 +185,7 @@ def plot_topic_dynamics(
         years = [p[0] for p in points]
         shares = [p[1] for p in points]
         all_years.extend(years)
-        color = _HIGHLIGHT_CMAP(i % _HIGHLIGHT_CMAP.N)
+        color = _highlight_color(i)
         ax.plot(years, shares, color=color, linewidth=2)
         label = topic_labels.get(topic_id, f"Topic {topic_id}")
         entries.append((color, label, years[-1], shares[-1]))
