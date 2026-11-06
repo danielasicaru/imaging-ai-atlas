@@ -106,3 +106,43 @@ def test_rank_topics_by_slope_orders_rising_above_flat_above_falling() -> None:
     flat_ci_high = float(flat_row["slope_ci_high"])
     assert flat_ci_low < 0
     assert flat_ci_high > 0
+
+
+def test_rank_topics_by_slope_returns_empty_frame_with_columns_when_unlabeled() -> None:
+    topics = [0, 0, 1, 1] * 25
+    years = [2020] * 50 + [2021] * 50
+    volume = topic_volume_by_year(topics, years)
+    share = topic_share_by_year(volume)
+    bootstrap_shares = bootstrap_topic_share(topics, years, n_iterations=10, seed=1)
+
+    ranking = rank_topics_by_slope(share, bootstrap_shares, topic_labels={}, min_year_total=20)
+
+    assert list(ranking.columns) == ["topic_id", "label", "slope", "slope_ci_low", "slope_ci_high"]
+    assert len(ranking) == 0
+
+
+def test_rank_topics_by_slope_zero_fills_years_a_topic_has_no_documents_in() -> None:
+    # Topic 0 appears in every year (clears min_year_total on its own). Topic 1 only
+    # has documents in 2018, and zero in 2019-2022 - those missing years must be
+    # treated as share=0, not skipped. Without zero-filling, topic 1 would have only
+    # one (year, share) row, which is too few points to fit any slope at all (nan);
+    # zero-filling it against the other four valid years gives a real, well-defined
+    # declining slope instead.
+    counts_by_year_topic = {
+        2018: {0: 10, 1: 90},
+        2019: {0: 20},
+        2020: {0: 30},
+        2021: {0: 40},
+        2022: {0: 50},
+    }
+    topics, years = _expand_counts(counts_by_year_topic)
+    volume = topic_volume_by_year(topics, years)
+    share = topic_share_by_year(volume)
+    bootstrap_shares = bootstrap_topic_share(topics, years, n_iterations=10, seed=1)
+    topic_labels = {0: "rising", 1: "one-year-only"}
+
+    ranking = rank_topics_by_slope(share, bootstrap_shares, topic_labels, min_year_total=20)
+
+    topic_1_row = ranking[ranking["topic_id"] == 1].iloc[0]
+    assert not math.isnan(topic_1_row["slope"])
+    assert topic_1_row["slope"] < 0

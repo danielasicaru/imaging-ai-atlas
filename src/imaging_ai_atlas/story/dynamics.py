@@ -75,30 +75,47 @@ def rank_topics_by_slope(
     `story/labels.py` already applies. Uses the same `min_year_total` threshold as the
     dynamics chart, for the same small-sample-noise reason.
     """
-    valid_years = set(share.loc[share["year_total"] >= min_year_total, "year"].to_numpy().tolist())
+    result_columns = ["topic_id", "label", "slope", "slope_ci_low", "slope_ci_high"]
     topic_ids = sorted(topic_labels)
+    if not topic_ids:
+        return pd.DataFrame(columns=result_columns)
 
-    def _slope(years_values: np.ndarray, share_values: np.ndarray) -> float:
-        if len(years_values) < 2:
+    valid_years = sorted(
+        set(share.loc[share["year_total"] >= min_year_total, "year"].to_numpy().tolist())
+    )
+    years_array = np.array(valid_years, dtype=float)
+
+    def _slope(share_values: np.ndarray) -> float:
+        if len(years_array) < 2:
             return float("nan")
-        slope, _ = np.polyfit(years_values, share_values, 1)
+        slope, _ = np.polyfit(years_array, share_values, 1)
         return float(slope)
 
+    def _zero_filled_shares(frame: pd.DataFrame) -> np.ndarray:
+        # A (topic, year) pair with no row means that topic had zero documents that
+        # year, not "no data" - zero-filling is required so the slope reflects the
+        # real trend (including dips to zero), not just the years a topic happened to
+        # have at least one document in. Without this, a topic present in only a few
+        # of the valid years gets its slope fit on those years alone, silently
+        # ignoring the zero-share years in between.
+        share_by_year = dict(zip(frame["year"].to_numpy(), frame["share"].to_numpy(), strict=True))
+        return np.array([share_by_year.get(year, 0.0) for year in valid_years])
+
+    is_valid_year = np.isin(share["year"].to_numpy(), valid_years)
     real_slopes = {}
     for topic_id in topic_ids:
         is_topic = share["topic_id"].to_numpy() == topic_id
-        is_valid_year = np.isin(share["year"].to_numpy(), list(valid_years))
         subset = share.loc[is_topic & is_valid_year]
-        real_slopes[topic_id] = _slope(subset["year"].to_numpy(), subset["share"].to_numpy())
+        real_slopes[topic_id] = _slope(_zero_filled_shares(subset))
 
-    is_valid_year = np.isin(bootstrap_shares["year"].to_numpy(), list(valid_years))
-    boot = bootstrap_shares.loc[is_valid_year]
+    is_valid_year_boot = np.isin(bootstrap_shares["year"].to_numpy(), valid_years)
+    boot = bootstrap_shares.loc[is_valid_year_boot]
     slope_samples: dict[int, list[float]] = {topic_id: [] for topic_id in topic_ids}
     for iteration in np.unique(boot["iteration"].to_numpy()):
         iteration_df = boot.loc[boot["iteration"].to_numpy() == iteration]
         for topic_id in topic_ids:
             points = iteration_df.loc[iteration_df["topic_id"].to_numpy() == topic_id]
-            slope = _slope(points["year"].to_numpy(), points["share"].to_numpy())
+            slope = _slope(_zero_filled_shares(points))
             if not math.isnan(slope):
                 slope_samples[topic_id].append(slope)
 
@@ -120,7 +137,7 @@ def rank_topics_by_slope(
             }
         )
     return (
-        pd.DataFrame(rows)
+        pd.DataFrame(rows, columns=result_columns)
         .sort_values("slope", ascending=False, na_position="last")
         .reset_index(drop=True)
     )

@@ -93,19 +93,20 @@ Per-year topic share was bootstrapped (1,000 resamples within each year) to put 
 confidence interval on each of the 30 coherent topics' trend, ranked by the slope of
 share-vs-year (`reports/topic_dynamics_summary.csv`).
 
-The fastest-rising topic by slope is **Radiology report generation** (slope 0.00327/year,
-95% CI [0.00210, 0.00474]) - a clear, unambiguous rise since its whole CI sits above zero.
-Close behind: **whole-slide image classification (multiple instance learning)** (slope
-0.00211/year, 95% CI [0.00108, 0.00272]) and **diffusion generative models for medical
-imaging** (slope 0.00211/year, 95% CI [0.00131, 0.00356]).
+The fastest-rising topic by slope is **Transformer and U-Net architectures for medical
+image segmentation** (slope 0.00236/year, 95% CI [0.00132, 0.00315]) - a clear,
+unambiguous rise since its whole CI sits above zero. Close behind: **COVID-19 detection
+from chest X-ray and CT** (slope 0.00233/year, 95% CI [0.00215, 0.00251]) and
+**radiology report generation** (slope 0.00211/year, 95% CI [0.00189, 0.00234]).
 
 The fastest-fading topic is **Radiation detectors and therapy physics** (slope
--0.00754/year, 95% CI [-0.01111, -0.00470]), followed by **COVID-19 detection from chest
-X-ray and CT** (slope -0.00628/year, 95% CI [-0.02262, -0.00570]) - both CIs sit entirely
-below zero, so unlike several mid-table topics whose CIs straddle zero (e.g. cardiac MRI,
-federated learning), these two declines are not just bootstrap noise.
+-0.00754/year, 95% CI [-0.01093, -0.00416]), followed by **fMRI functional connectivity
+and brain networks** (slope -0.00389/year, 95% CI [-0.00660, -0.00146]) - both CIs sit
+entirely below zero, so unlike several mid-table topics whose CIs straddle zero (e.g.
+knee osteoarthritis, liver lesion segmentation), these two declines are not just
+bootstrap noise.
 
-## 7. Takeaways and limitations
+## 7. Takeaways, limitations, and ethics
 
 **Takeaways:**
 - A relatively small, efficient embedding (64 dimensions) captures this corpus's thematic
@@ -113,10 +114,10 @@ federated learning), these two declines are not just bootstrap noise.
 - UMAP's non-linear projection is doing substantive work; a linear control (PCA) on the
   identical embedding collapses almost the entire corpus into one dominant cluster plus
   noise.
-- Natural-language radiology report generation is the most unambiguously rising theme in
-  the corpus (slope's full 95% CI stays positive) - a shift from purely perceptual tasks
-  (segmentation, classification) toward generating clinical text, consistent with the
-  broader trend of applying large language models to medical imaging.
+- The most unambiguously rising theme (slope's full 95% CI stays positive, section 6) is
+  transformer/U-Net segmentation architectures - evidence that architectural modernization
+  of the core perceptual task (segmentation) is still an active, growing area, not a
+  settled one the field has moved past.
 
 **Limitations:**
 - Filter recall is not actually known to be good - only that zero misses were observed in
@@ -137,3 +138,19 @@ federated learning), these two declines are not just bootstrap noise.
 - The rising/fading ranking in section 6 is restricted to the 30 largest, human-reviewed
   topics - it says nothing about trends among the ~160 smaller topics this project did not
   review for coherence.
+
+**Ethics:**
+- This project analyzes only arXiv's public metadata (titles, abstracts, categories,
+  dates) - not patient data, clinical records, or anything containing personal health
+  information. The underlying metadata is CC0 (section 1), and no full-text or
+  non-metadata content is used.
+- The real risk of a project like this is misplaced confidence: a "rising theme" slope
+  with a confidence interval still only measures *publication volume on arXiv*, not
+  clinical adoption, research quality, or real-world impact. Reading section 6's ranking
+  as "AI radiology report generation is succeeding clinically" rather than "papers
+  mentioning it are increasingly common on arXiv" would be a real misreading this report
+  tries to guard against by reporting slopes with CIs rather than a bare ranked list.
+- The filter rule's precision/recall limitations (section 5) mean this corpus is not a
+  neutral census of the field - a systematic keyword or category blind spot would
+  under-represent whatever research it misses, and that under-representation would then
+  silently propagate into every downstream theme and trend claim in this report.
