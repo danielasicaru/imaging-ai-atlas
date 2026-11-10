@@ -1,0 +1,5 @@
+outs:
+- md5: 198c280270388c0d208a79b082da10e6
+  size: 32222187
+  hash: md5
+  path: pubmed_cervical_spine_v2.xml

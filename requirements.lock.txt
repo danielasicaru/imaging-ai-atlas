@@ -1080,6 +1080,7 @@ requests==2.34.2 \
     #   docker
     #   dvc
     #   dvc-studio-client
+    #   imaging-ai-atlas
     #   iterative-telemetry
     #   mlflow-skinny
 rich==15.0.0 \
