@@ -14,6 +14,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.6",          # config validation (plain YAML + pydantic; revisit if Hydra is chosen)
     "typer>=0.12",            # per-stage CLI
+    "requests>=2.31",         # NCBI E-utilities HTTP calls (PubMed fetch)
     # embeddings and topics
     "torch==2.14.1",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
                                # [tool.uv.sources]/[tool.uv.index] below) — both must resolve the same version

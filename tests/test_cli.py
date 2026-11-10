@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 from typer.testing import CliRunner
 
@@ -10,6 +12,79 @@ def test_version_command() -> None:
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
     assert "imaging-ai-atlas" in result.stdout
+
+
+def test_ingest_command_exits_cleanly_for_an_unknown_source(tmp_path) -> None:
+    raw_path = tmp_path / "snapshot.jsonl"
+    raw_path.touch()
+    result = runner.invoke(app, ["ingest", "not-a-real-source", "--raw-path", str(raw_path)])
+    assert result.exit_code == 1
+
+
+def test_ingest_command_exits_cleanly_when_raw_file_is_missing(tmp_path) -> None:
+    result = runner.invoke(
+        app, ["ingest", "arxiv", "--raw-path", str(tmp_path / "nonexistent.jsonl")]
+    )
+    assert result.exit_code == 1
+
+
+def test_ingest_command_writes_parquet_for_arxiv(tmp_path) -> None:
+    raw_path = tmp_path / "snapshot.jsonl"
+    raw_path.write_text(
+        json.dumps(
+            {
+                "id": "1234.5678",
+                "title": "A paper",
+                "abstract": "An abstract",
+                "categories": "eess.IV cs.CV",
+                "versions": [{"created": "Mon, 2 Apr 2007 19:18:42 GMT"}],
+                "update_date": "2020-01-01",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    out_path = tmp_path / "papers.parquet"
+
+    result = runner.invoke(
+        app,
+        ["ingest", "arxiv", "--raw-path", str(raw_path), "--out-path", str(out_path)],
+    )
+
+    assert result.exit_code == 0
+    assert out_path.exists()
+    assert len(pd.read_parquet(out_path)) == 1
+
+
+def test_combine_corpora_command_writes_combined_parquet(tmp_path) -> None:
+    def _frame(source: str, external_id: str) -> pd.DataFrame:
+        return pd.DataFrame.from_records(
+            [
+                {
+                    "source": source,
+                    "external_id": external_id,
+                    "title": "t",
+                    "abstract": "a",
+                    "categories": ["eess.IV"],
+                    "created": "2020-01-01",
+                    "update_date": None,
+                }
+            ]
+        )
+
+    path_a = tmp_path / "a.parquet"
+    path_b = tmp_path / "b.parquet"
+    _frame("arxiv", "1").to_parquet(path_a)
+    _frame("pubmed", "2").to_parquet(path_b)
+    out_path = tmp_path / "combined.parquet"
+
+    result = runner.invoke(
+        app,
+        ["combine-corpora", str(path_a), str(path_b), "--out-path", str(out_path)],
+    )
+
+    assert result.exit_code == 0
+    assert len(pd.read_parquet(out_path)) == 2
 
 
 def test_embed_command_exits_cleanly_when_papers_file_is_missing(tmp_path) -> None:

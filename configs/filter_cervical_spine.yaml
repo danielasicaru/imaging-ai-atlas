@@ -1,0 +1,64 @@
+# Narrower filter rule for the "cervical spine fracture detection/classification/
+# segmentation AI" topic domain - same shape as configs/filter_medical_imaging.yaml, just
+# a different YAML, per data/filter.py's FilterConfig design (no code change needed to
+# point the pipeline at a different research topic).
+name: cervical-spine-fracture
+
+# arXiv categories reused from the medical-imaging config, plus PubMed MeSH headings that
+# would plausibly appear on a cervical-spine-fracture AI paper. A paper matches if *any*
+# single category is in this list - works across both sources without a source-specific
+# branch, since PaperRecord.categories is already source-agnostic.
+category_scope:
+  # arXiv. q-bio.TO (Tissues and Organs) was dropped - it let in comparative-anatomy/
+  # paleontology papers that genuinely use the term "cervical vertebra\w*" for animal
+  # neck anatomy (sauropod/giraffe neck papers) with zero connection to AI or clinical
+  # imaging. Every real cervical-spine-AI arXiv paper found so far already carries
+  # eess.IV/cs.CV/physics.med-ph.
+  - eess.IV
+  - cs.CV
+  - q-bio.QM
+  - physics.med-ph
+  # PubMed MeSH headings - AI/imaging-task categories only. An earlier version also
+  # included anatomy/injury headings (Cervical Vertebrae, Spinal Fractures, Spine, ...) as
+  # alternatives here - since category_scope and keyword_patterns are each OR'd internally
+  # and then AND'd together (matches_filter), that let a PubMed record clear the category
+  # gate on MeSH-tagged anatomy alone, with no MeSH signal of AI-relatedness required at
+  # all (cervical-topic narrowing was still enforced by keyword_patterns, but
+  # AI-relatedness wasn't enforced by anything). That's how purely clinical papers with no
+  # AI/ML content (e.g. a trauma-management case report) passed the filter. Restricting
+  # this list to AI/computational-imaging MeSH headings makes category_scope do the same
+  # job here it does on the arXiv side: identify "could this involve AI/imaging
+  # computation," leaving "is this about the cervical spine" entirely to keyword_patterns.
+  - Tomography, X-Ray Computed
+  - Radiography
+  - Deep Learning
+  - Neural Networks, Computer
+  - Machine Learning
+  - Artificial Intelligence
+
+# Cervical-spine-specific vocabulary only. The first draft of this config also included
+# unanchored spine/vertebra/fracture terms ("spine segmentation", "fracture detection",
+# etc.) on the theory that the task vocabulary would narrow things down - it didn't,
+# because these patterns are OR'd together (see keyword_pattern_str), so any one of them
+# matching pulls in general spine papers (lumbar, thoracic) with no mention of "cervical"
+# at all. Every pattern below requires a cervical-specific anchor - either the word
+# "cervical" itself or a named cervical fracture/injury (Jefferson = C1 burst fracture,
+# hangman's = C2 traumatic spondylolisthesis, odontoid = C2 dens fracture,
+# atlantoaxial/atlanto-occipital = C1-C2/occiput-C1 joints).
+#
+# The bare "\bC[1-7]\b vertebra/fracture/level/spine" pattern was dropped - it still
+# matched real false positives (paleontology papers using "C1"-"C7" to number animal
+# cervical vertebrae, e.g. sauropod/giraffe neck anatomy), and every clinical case it
+# was meant to catch is already covered by "cervical vertebra\w*"/"cervical fracture\w*"
+# or one of the named-fracture patterns below.
+keyword_patterns:
+  - "cervical spine"
+  - "cervical vertebra\\w*"
+  - "cervical fracture\\w*"
+  - "cervical injur\\w*"
+  - "subaxial cervical"
+  - "atlantoaxial"
+  - "atlanto-occipital"
+  - "odontoid fracture\\w*"
+  - "hangman'?s? fracture\\w*"
+  - "jefferson fracture\\w*"

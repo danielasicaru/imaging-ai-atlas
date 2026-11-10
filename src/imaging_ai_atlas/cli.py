@@ -5,8 +5,13 @@ from pathlib import Path
 import pandas as pd
 import typer
 
+from imaging_ai_atlas.data.arxiv import ArxivSource
 from imaging_ai_atlas.data.clean_text import strip_latex
+from imaging_ai_atlas.data.combine import combine_corpora
 from imaging_ai_atlas.data.filter import apply_filter, load_filter_config
+from imaging_ai_atlas.data.ingest import ingest as ingest_source
+from imaging_ai_atlas.data.pubmed import PubmedSource
+from imaging_ai_atlas.data.pubmed_fetch import fetch_pubmed_xml
 from imaging_ai_atlas.embed.config import load_embed_config
 from imaging_ai_atlas.embed.pipeline import corpus_hash, run_embedding_sweep
 from imaging_ai_atlas.story.dynamics import (
@@ -20,7 +25,10 @@ from imaging_ai_atlas.story.map2d import project_2d
 from imaging_ai_atlas.story.plots import plot_topic_dynamics, plot_topic_map
 from imaging_ai_atlas.topics.config import (
     EmbeddingVariant,
+    HdbscanConfig,
     TopicModelConfig,
+    UmapConfig,
+    VectorizerConfig,
     load_topic_sweep_config,
 )
 from imaging_ai_atlas.topics.labeling import build_topic_label_sample
@@ -62,6 +70,81 @@ def _load_filtered_corpus(papers_path: Path, filter_config_path: Path) -> pd.Dat
 def version() -> None:
     """Print the installed package version."""
     typer.echo("imaging-ai-atlas 0.1.0")
+
+
+_SOURCES = {"arxiv": ArxivSource, "pubmed": PubmedSource}
+
+
+@app.command()
+def ingest(
+    source: str = typer.Argument(..., help="Which source to ingest: 'arxiv' or 'pubmed'."),
+    raw_path: Path = Path("data/raw/snapshot"),
+    out_path: Path = Path("data/interim/papers.parquet"),
+    force: bool = typer.Option(False, "--force", help="Overwrite out_path if it already exists."),
+) -> None:
+    """Parse a raw snapshot from `source` into the normalized `PaperRecord` parquet
+    schema every later pipeline stage reads.
+    """
+    if source not in _SOURCES:
+        typer.echo(f"Unknown source '{source}' - must be one of {sorted(_SOURCES)}.", err=True)
+        raise typer.Exit(1)
+    _require_exists(raw_path, f"No raw snapshot at {raw_path}.")
+    if out_path.exists() and not force:
+        typer.echo(
+            f"{out_path} already exists - rerun with --out-path <new path> or --force to "
+            "overwrite it (the default path is shared with other corpora's ingest runs).",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    count = ingest_source(_SOURCES[source](), raw_path, out_path)
+    typer.echo(f"Ingested {count} {source} papers to {out_path}")
+
+
+@app.command()
+def fetch_pubmed(
+    query: str,
+    email: str,
+    raw_path: Path = Path("data/raw/pubmed.xml"),
+    max_results: int = 2000,
+    api_key: str | None = None,
+    force: bool = typer.Option(False, "--force", help="Overwrite raw_path if it already exists."),
+) -> None:
+    """Search PubMed for `query` via NCBI E-utilities and save the raw XML to `raw_path`,
+    ready for `atlas ingest pubmed --raw-path <raw_path>`.
+    """
+    if raw_path.exists() and not force:
+        typer.echo(
+            f"{raw_path} already exists - rerun with --raw-path <new path> or --force to "
+            "overwrite it (refetching re-runs the full NCBI query under its rate limit).",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    count = fetch_pubmed_xml(query, raw_path, email, max_results, api_key)
+    typer.echo(f"Fetched {count} PubMed records to {raw_path}")
+
+
+@app.command("combine-corpora")
+def combine_corpora_command(
+    paths: list[Path],
+    out_path: Path = Path("data/interim/papers.parquet"),
+    force: bool = typer.Option(False, "--force", help="Overwrite out_path if it already exists."),
+) -> None:
+    """Concatenate multiple sources' `PaperRecord` parquet files into one corpus,
+    deduping on (source, external_id).
+    """
+    for path in paths:
+        _require_exists(path, f"No papers file at {path}.")
+    if out_path.exists() and not force:
+        typer.echo(
+            f"{out_path} already exists - rerun with --out-path <new path> or --force to "
+            "overwrite it (the default path is shared with other corpora's combine runs).",
+            err=True,
+        )
+        raise typer.Exit(1)
+    count = combine_corpora(paths, out_path)
+    typer.echo(f"Combined {count} papers into {out_path}")
 
 
 @app.command()
@@ -125,6 +208,9 @@ def register_topic(
     max_len: int = 256,
     dims: int = 64,
     n_label_topics: int = 30,
+    min_cluster_size: int = HdbscanConfig().min_cluster_size,
+    min_df: int = VectorizerConfig().min_df,
+    umap_n_neighbors: int = UmapConfig().n_neighbors,
     force: bool = typer.Option(
         False, "--force", help="Overwrite an existing, human-labeled labeling sample CSV."
     ),
@@ -132,6 +218,15 @@ def register_topic(
     """Fit the chosen primary topic model (nomic@64 per ADR 0004) once at seed 0, register
     it as a standard MLflow artifact, and write a human coherence-check sample for the
     `n_label_topics` largest topics. Requires `atlas embed` to have cached this variant.
+
+    `min_cluster_size`/`min_df`/`umap_n_neighbors` default to the values tuned for the full
+    medical-imaging corpus (ADR 0004) - a much smaller filtered corpus (e.g. a narrow
+    topic-domain config) needs smaller values: HDBSCAN can't form clusters bigger than the
+    corpus, CountVectorizer's `min_df` can't exceed the smallest cluster's document count,
+    and UMAP's `n_neighbors` relative to corpus size controls how local vs. global its
+    neighborhood graph is - at `n_neighbors=15` on a few hundred documents or fewer, a
+    meaningful fraction of the whole corpus counts as "nearby," which flattens real local
+    structure HDBSCAN needs to find separable clusters.
     """
     _require_corpus_inputs(papers_path, filter_config_path)
     if labeling_sample_path.exists() and not force:
@@ -165,7 +260,11 @@ def register_topic(
         for title, abstract in zip(filtered["title"], filtered["abstract"], strict=True)
     ]
 
-    config = TopicModelConfig()
+    config = TopicModelConfig(
+        umap=UmapConfig(n_neighbors=umap_n_neighbors),
+        hdbscan=HdbscanConfig(min_cluster_size=min_cluster_size),
+        vectorizer=VectorizerConfig(min_df=min_df),
+    )
     typer.echo(f"Fitting final topic model on {len(texts)} docs...")
     topic_model, topics = fit_topic_model(embeddings, texts, config.seeds[0], config)
 
