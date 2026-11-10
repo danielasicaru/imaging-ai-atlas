@@ -16,12 +16,12 @@ dependencies = [
     "typer>=0.12",            # per-stage CLI
     "requests>=2.31",         # NCBI E-utilities HTTP calls (PubMed fetch)
     # embeddings and topics
-    "torch==2.14.1",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
+    "torch==2.15.0",          # pinned exactly: CUDA wheel on Windows, CPU wheel on Linux CI (see
                                # [tool.uv.sources]/[tool.uv.index] below) — both must resolve the same version
     "sentence-transformers>=3.0",
     "safetensors>=0.4",
     "einops>=0.7",            # required by nomic-embed-text-v1.5's trust_remote_code module
-    "transformers<5.12",      # nomic-embed-text-v1.5's remote code calls
+    "transformers<5.23",      # nomic-embed-text-v1.5's remote code calls
                                # PreTrainedModel.get_extended_attention_mask(), removed in
                                # transformers 5.12 - AttributeError on NomicBertModel above that
     "bertopic>=0.16",
