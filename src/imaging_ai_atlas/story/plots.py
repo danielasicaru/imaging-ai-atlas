@@ -3,6 +3,10 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+
+from imaging_ai_atlas.story.dynamics import MIN_YEAR_TOTAL
 
 # Figures only ever get saved to a file, never shown interactively - force the
 # non-interactive Agg backend so this works headless (CI, no Tk/X11) without needing a
@@ -21,21 +25,72 @@ import matplotlib.pyplot as plt
 # is the standard reference palette for this. 8 colors caps how many topics either chart
 # can highlight at once with a guaranteed-distinct color (see `n_highlighted` defaults
 # below) - cycling past 8 would silently repeat a color across two different topics.
-_HIGHLIGHT_COLORS = [
+BLUE = "#0072B2"
+YELLOW = "#F0E442"
+HIGHLIGHT_COLORS = [
     "#E69F00",  # orange
     "#56B4E9",  # sky blue
     "#009E73",  # bluish green
-    "#F0E442",  # yellow
-    "#0072B2",  # blue
+    YELLOW,
+    BLUE,
     "#D55E00",  # vermillion
     "#CC79A7",  # reddish purple
     "#000000",  # black
 ]
-_GREY = "#bbbbbb"
+GREY = "#bbbbbb"
+# Same order minus yellow, which is unreadable as a thin line or as text on white.
+LINE_COLORS = [c for c in HIGHLIGHT_COLORS if c != YELLOW]
+
+
+def save_figure(fig: Figure, save_path: Path) -> None:
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def label_slots(values: list[float], min_gap: float) -> list[float]:
+    """A y position per value (in input order) for its end-of-line label: each slot is
+    anchored at its own real value, nudged up only enough to clear the label below it (a
+    minimal-displacement monotonic stack, not the topic map's all-pairs spread). Spacing
+    labels evenly across the whole y-range instead would draw long diagonal leaders from
+    a low real value up to a high slot, which reads as a fabricated trend.
+    """
+    slots = [0.0] * len(values)
+    previous: float | None = None
+    for i in sorted(range(len(values)), key=lambda i: values[i]):
+        slot = values[i] if previous is None else max(values[i], previous + min_gap)
+        slots[i] = previous = slot
+    return slots
+
+
+def stack_end_labels(
+    ax: Axes,
+    entries: list[tuple[str, str, float, float]],
+    label_x: float,
+    min_gap_fraction: float = 1 / 45,
+) -> None:
+    """Label each line in the right margin at `label_x`, joined to its last point by a
+    thin leader, stacked with `label_slots`. `entries` are (color, label, last_x, last_y);
+    `min_gap_fraction` is the gap between labels as a share of the y-range.
+    """
+    y_min, y_max = ax.get_ylim()
+    min_gap = (y_max - y_min) * min_gap_fraction
+    slot_ys = label_slots([e[3] for e in entries], min_gap=min_gap)
+
+    for (color, label, last_x, last_y), slot_y in zip(entries, slot_ys, strict=True):
+        ax.annotate(
+            label,
+            xy=(last_x, last_y),
+            xytext=(label_x, slot_y),
+            color=color,
+            fontsize=8,
+            fontweight="normal" if color == GREY else "bold",
+            va="center",
+            arrowprops={"arrowstyle": "-", "color": color, "linewidth": 0.6, "alpha": 0.5},
+        )
 
 
 def _highlight_color(i: int) -> str:
-    return _HIGHLIGHT_COLORS[i % len(_HIGHLIGHT_COLORS)]
+    return HIGHLIGHT_COLORS[i % len(HIGHLIGHT_COLORS)]
 
 
 def _spread_labels(
@@ -79,7 +134,7 @@ def plot_topic_map(
 
     fig, ax = plt.subplots(figsize=(12, 10))
     other_mask = ~np.isin(topics_arr, highlighted)
-    ax.scatter(coords[other_mask, 0], coords[other_mask, 1], c=_GREY, s=4, alpha=0.4, linewidths=0)
+    ax.scatter(coords[other_mask, 0], coords[other_mask, 1], c=GREY, s=4, alpha=0.4, linewidths=0)
 
     y_span = coords[:, 1].max() - coords[:, 1].min()
     # Offset every label above its own centroid before spreading, not just when it
@@ -124,8 +179,7 @@ def plot_topic_map(
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title("Medical-imaging AI research: topic map")
-    fig.savefig(save_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    save_figure(fig, save_path)
 
 
 def plot_topic_dynamics(
@@ -133,7 +187,7 @@ def plot_topic_dynamics(
     topic_labels: dict[int, str],
     save_path: Path,
     n_highlighted: int = 8,
-    min_year_total: int = 20,
+    min_year_total: int = MIN_YEAR_TOTAL,
 ) -> None:
     """One line per highlighted topic (its share of the corpus per year), with every
     other topic summed into a single grey "other topics" line. Years with fewer than
@@ -173,11 +227,11 @@ def plot_topic_dynamics(
 
     other_years = sorted(other_by_year)
     other_shares = [other_by_year[y] for y in other_years]
-    ax.plot(other_years, other_shares, color=_GREY, linewidth=1.5)
+    ax.plot(other_years, other_shares, color=GREY, linewidth=1.5)
 
     entries: list[tuple[str, str, float, float]] = []
     if other_years:
-        entries.append((_GREY, "other topics", other_years[-1], other_shares[-1]))
+        entries.append((GREY, "other topics", other_years[-1], other_shares[-1]))
 
     all_years = list(other_years)
     for i, topic_id in enumerate(highlighted):
@@ -194,34 +248,9 @@ def plot_topic_dynamics(
     label_x = max_year + 1.5
     ax.set_xlim(right=label_x + 4)
 
-    # Anchor each label's slot at its own real last-share value, nudged up only enough to
-    # clear the next label below it in sorted order (a minimal-total-displacement
-    # monotonic stack, not the topic map's all-pairs spread) - ranking labels by share and
-    # spacing them evenly across the *entire* y-range would draw long diagonal leader
-    # lines from a low real value up to a high slot position, which reads as a fabricated
-    # trend rather than a label placement, especially misleading on a chart whose whole
-    # point is separating real signal from noise.
-    entries.sort(key=lambda e: e[3])
-    y_min, y_max = ax.get_ylim()
-    min_gap = (y_max - y_min) / 45
-    slot_ys: list[float] = []
-    for _, _, _, last_share in entries:
-        slot_ys.append(last_share if not slot_ys else max(last_share, slot_ys[-1] + min_gap))
-
-    for (color, label, last_year, last_share), slot_y in zip(entries, slot_ys, strict=True):
-        ax.annotate(
-            label,
-            xy=(last_year, last_share),
-            xytext=(label_x, slot_y),
-            color=color,
-            fontsize=8,
-            fontweight="normal" if color == _GREY else "bold",
-            va="center",
-            arrowprops={"arrowstyle": "-", "color": color, "linewidth": 0.6, "alpha": 0.5},
-        )
+    stack_end_labels(ax, entries, label_x)
 
     ax.set_xlabel("Year")
     ax.set_ylabel("Share of papers")
     ax.set_title("Medical-imaging AI research: topic share over time")
-    fig.savefig(save_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    save_figure(fig, save_path)

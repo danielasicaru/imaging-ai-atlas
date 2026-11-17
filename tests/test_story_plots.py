@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from imaging_ai_atlas.story.dynamics import topic_share_by_year, topic_volume_by_year
-from imaging_ai_atlas.story.plots import plot_topic_dynamics, plot_topic_map
+from imaging_ai_atlas.story.plots import label_slots, plot_topic_dynamics, plot_topic_map
 
 
 def test_plot_topic_map_writes_a_file(tmp_path: Path) -> None:
@@ -61,3 +62,13 @@ def test_plot_topic_dynamics_drops_low_volume_years_and_labels_other_topics(
 
     assert save_path.exists()
     assert save_path.stat().st_size > 0
+
+
+def test_label_slots_keep_each_label_at_or_above_its_value_and_min_gap_apart() -> None:
+    # Labels for lines ending close together are pushed up just enough to clear each
+    # other - never moved below their own line's value, which would point the leader
+    # line the wrong way.
+    slots = label_slots([0.50, 0.10, 0.11, 0.12], min_gap=0.05)
+
+    # Returned in input order, so callers can zip slots straight back onto their labels.
+    assert slots == pytest.approx([0.50, 0.10, 0.15, 0.20])

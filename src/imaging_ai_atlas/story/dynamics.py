@@ -3,6 +3,10 @@ import math
 import numpy as np
 import pandas as pd
 
+# Years with fewer papers than this are left out of every share-over-time view: with a
+# handful of papers, one document swings a share wildly.
+MIN_YEAR_TOTAL = 20
+
 
 def topic_volume_by_year(topics: list[int], years: list[int]) -> pd.DataFrame:
     """Per-topic, per-year document counts - the raw input to both an absolute-volume
@@ -66,7 +70,7 @@ def rank_topics_by_slope(
     share: pd.DataFrame,
     bootstrap_shares: pd.DataFrame,
     topic_labels: dict[int, str],
-    min_year_total: int = 20,
+    min_year_total: int = MIN_YEAR_TOTAL,
 ) -> pd.DataFrame:
     """Rank topics by the slope of share-vs-year (rising first), with a percentile
     confidence interval on that slope from `bootstrap_shares`. Restricted to
