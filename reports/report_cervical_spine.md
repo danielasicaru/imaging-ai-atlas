@@ -124,7 +124,42 @@ the apparent 2024-2025 swings and the flat line after 2026 are an artifact of sp
 data and the plotting code's extrapolation, not a measured trend, and should not be read
 as one.
 
-## 6. Takeaways, limitations, and ethics
+## 6. Preprints vs. journal papers
+
+Because this corpus combines arXiv preprints with PubMed journal papers, it can show
+whether the two publication routes cover the same themes. Each source's papers are
+counted per theme and as a share of that source's total
+(`reports/topic_mix_by_source_cervical_spine.csv`, topic numbers as in section 4):
+
+| Theme | arXiv (21 papers) | PubMed (161 papers) |
+|---|---|---|
+| Topic 0 - fracture detection/segmentation on CT | 9 (42.9%) | 60 (37.3%) |
+| Topic 1 - cervical vertebral maturation | 6 (28.6%) | 46 (28.6%) |
+| Topic 2 - clinical cervical-spine imaging | 5 (23.8%) | 39 (24.2%) |
+| No clear theme (outliers) | 1 (4.8%) | 16 (9.9%) |
+
+**The theme mix is nearly the same in both sources.** Preprints lean slightly toward
+fracture detection and have fewer outliers, but with 21 arXiv papers a difference of
+one or two papers moves a share by 5-10 points, so none of these gaps is evidence of a
+real difference. What the table does show is that the arXiv side is small: most of this
+sub-literature is published in journals, which is why PubMed was added in the first
+place (section 1).
+
+Reproduce with:
+
+```bash
+atlas story \
+  --papers-path data/interim/papers_cervical_spine.parquet \
+  --filter-config-path configs/filter_cervical_spine.yaml \
+  --embeddings-dir data/interim/embeddings_cervical_spine \
+  --assignments-path data/interim/topic_assignments_cervical_spine.parquet \
+  --labeling-sample-path data/interim/topic_labeling_sample_cervical_spine.csv \
+  --figures-dir reports/figures_cervical_spine \
+  --dynamics-summary-path reports/topic_dynamics_summary_cervical_spine.csv \
+  --source-mix-path reports/topic_mix_by_source_cervical_spine.csv
+```
+
+## 7. Takeaways, limitations, and ethics
 
 **Takeaways:**
 - The same `Source`/`FilterConfig` abstractions built for the arXiv-only main corpus

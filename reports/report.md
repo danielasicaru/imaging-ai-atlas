@@ -154,3 +154,23 @@ bootstrap noise.
   neutral census of the field - a systematic keyword or category blind spot would
   under-represent whatever research it misses, and that under-representation would then
   silently propagate into every downstream theme and trend claim in this report.
+
+## 8. Related work
+
+**ArXiv Atlas** ([github.com/Jaluus/ArXivAtlas](https://github.com/Jaluus/ArXivAtlas), MIT
+licence) is a web tool that places arXiv papers on an interactive map and recommends
+papers for a query. It is built for exploring and finding papers across arXiv.
+
+This project uses a similar starting point (embedding paper abstracts and projecting them
+to a map) for a different purpose:
+
+- **Change over time, not search.** The question is how one field's themes rise and fade,
+  so the core output is per-year topic share with bootstrap confidence intervals; the map
+  is an illustration, not the product.
+- **One field, measured scope.** The corpus is filtered to medical-imaging AI, and that
+  filter's precision is measured on a hand-labelled sample (section 5).
+- **Evaluated choices.** The embedding model and topic model were picked by comparing
+  variants on several metrics and seeds, and the largest themes were checked by hand for
+  coherence (sections 3-4).
+- **A written argument with its limits stated** (section 7), rather than an interactive
+  explorer.

@@ -40,7 +40,7 @@ is shown in grey](reports/figures/papers_per_year.png)
 0.845-0.930) on a hand-labelled sample. Recall is *not* known to be good; see the
 limitations in the report.
 
-![Dot chart on a log scale showing how the corpus narrows: all arXiv papers, then the
+![Dot chart on a log scale showing how the corpus narrows: all ingested arXiv papers, then the
 medical-imaging AI papers kept by the filter, then the papers assigned to a research
 theme](reports/figures/corpus_funnel.png)
 
@@ -71,8 +71,8 @@ peaking around 2020, and cs.AI rising since 2020](reports/figures/category_share
 The full write-up (data quality, why this embedding and topic model, all 30 themes, the
 trend estimates, and a limitations and ethics section) is in
 [`reports/report.md`](reports/report.md). A second, narrower study on cervical-spine
-fracture AI that combines arXiv with PubMed is in
-[`reports/report_cervical_spine.md`](reports/report_cervical_spine.md).
+fracture AI that combines arXiv with PubMed, including a comparison of preprints and
+journal papers, is in [`reports/report_cervical_spine.md`](reports/report_cervical_spine.md).
 
 ## What this project demonstrates
 
@@ -91,7 +91,7 @@ fracture AI that combines arXiv with PubMed is in
 - **Software engineering.** A typed, tested package with a CLI. CI runs linting, type
   checks, tests and secret scanning on every push, a dependency vulnerability scan
   whenever dependencies change (and weekly), and a security audit of the workflows
-  themselves. Design decisions are recorded as [ADRs](docs/decisions/).
+  themselves. Design decisions are recorded as [ADRs](https://github.com/danielasicaru/imaging-ai-atlas/tree/main/docs/decisions).
 - **Reusable by design.** The research topic is a config file. A second study on
   cervical-spine fracture AI reuses the same pipeline with an added PubMed source and
   no changes to the modelling code.
@@ -112,14 +112,20 @@ uv sync --extra dev   # install (Python 3.12, uv)
 atlas embed           # embed the filtered abstracts
 atlas topics          # compare topic models
 atlas register-topic  # fit and register the chosen model
-atlas story           # build the map and trend charts
+atlas story           # build all six figures
 ```
 
 The research topic is a config file, not code: point the same pipeline at a different
 domain with `--filter-config-path`. Every stage, command and option, plus how to change
-the topic, is in [`docs/pipeline.md`](docs/pipeline.md). The topic map and trend chart are
-built by `atlas story`; the other four charts in
-[`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb).
+the topic, is in [`docs/pipeline.md`](docs/pipeline.md). Every figure above is built by
+`atlas story`; [`notebooks/01_eda.ipynb`](https://github.com/danielasicaru/imaging-ai-atlas/blob/main/notebooks/01_eda.ipynb) walks through the same
+corpus step by step.
+
+## Related work
+
+[ArXiv Atlas](https://github.com/Jaluus/ArXivAtlas) maps arXiv papers for exploring and
+finding them; this project instead tracks how one field's themes change over time. See
+section 8 of the [report](reports/report.md).
 
 ## Limitations
 
