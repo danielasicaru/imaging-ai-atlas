@@ -7,6 +7,14 @@ updates:
     groups:
       python-dependencies:
         patterns: ["*"]
+    ignore:
+      # Capped on purpose: nomic-embed-text-v1.5's remote code breaks on 5.12+ (see
+      # pyproject.toml). Lift the cap by hand once a fixed model revision exists.
+      - dependency-name: "transformers"
+        versions: [">=5.12"]
+      # Pinned exactly so the Windows CUDA and Linux CPU builds resolve the same
+      # version from two indexes; bump it by hand and re-lock.
+      - dependency-name: "torch"
 
   - package-ecosystem: "github-actions"
     directory: "/"

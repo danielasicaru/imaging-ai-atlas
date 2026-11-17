@@ -129,13 +129,12 @@ known_first_party = ["imaging_ai_atlas"]
 
 [tool.deptry.per_rule_ignores]
 # DEP002 ("defined but unused"): pyarrow is an implicit engine (pandas uses it under the
-# hood for Parquet without a direct import), never imported by name.
-# The rest are declared ahead of the pipeline stage that imports them, and the dev extras
-# aren't imported by src/ at all. Shrink this list as each stage starts using its dependency.
+# hood for Parquet without a direct import), never imported by name. torch is used only
+# through sentence-transformers, but is declared to pin its version and CUDA/CPU build.
+# The dev extras aren't imported by src/ at all.
 DEP002 = [
     "pyarrow",
-    "torch", "bertopic",
-    "umap-learn", "hdbscan", "scikit-learn",
+    "torch",
     # einops: required by nomic-embed-text-v1.5's trust_remote_code module, never imported
     # by our own code. transformers: version-capped (<5.12) to work around nomic's remote
     # code calling an API transformers removed in 5.12 - also never imported directly,
