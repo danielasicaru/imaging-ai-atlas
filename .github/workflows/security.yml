@@ -4,13 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
 
-permissions:
-  actions: read
-  contents: read
-  security-events: write
+permissions: {}
 
 jobs:
   gitleaks:
@@ -29,27 +24,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # PR comments would need pull-requests: write; findings still fail the job.
           GITLEAKS_ENABLE_COMMENTS: "false"
-
-  osv-scanner:
-    if: >-
-      github.event_name == 'schedule' ||
-      (github.event_name == 'push' && (
-        contains(github.event.head_commit.modified, 'requirements.lock.txt') ||
-        contains(github.event.head_commit.modified, 'uv.lock')
-      ))
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
-    with:
-      scan-args: |-
-        --lockfile=requirements.txt:requirements.lock.txt
-
-  actions-lint:
-    if: github.event_name == 'push' && contains(github.event.head_commit.modified, '.github/')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
-      - uses: reviewdog/action-actionlint@619a81ec64ff8c0211cd6146eb2b21e8f1d7f440 # v1.81.1

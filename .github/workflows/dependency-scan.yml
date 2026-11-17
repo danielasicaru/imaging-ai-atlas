@@ -1,0 +1,29 @@
+name: Dependency scan
+
+# Path filters live at the workflow level, so this scan has its own file: it runs when
+# the dependency set can change, weekly for newly published advisories, and on demand.
+on:
+  push:
+    branches: [main]
+    paths: [uv.lock, requirements.lock.txt, pyproject.toml]
+  pull_request:
+    paths: [uv.lock, requirements.lock.txt, pyproject.toml]
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  osv-scanner:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+    with:
+      scan-args: |-
+        --lockfile=requirements.txt:requirements.lock.txt
+      # PR runs (Dependabot's included) get a read-only token that can't upload results;
+      # they still fail on a vulnerable dependency, which is the part that matters there.
+      upload-sarif: ${{ github.event_name != 'pull_request' }}

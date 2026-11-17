@@ -89,8 +89,9 @@ fracture AI that combines arXiv with PubMed is in
   revision, fixed seeds, raw data pinned by checksum, and every registered model
   logged to MLflow with its data hash, model and git commit.
 - **Software engineering.** A typed, tested package with a CLI. CI runs linting, type
-  checks, tests and secret scanning on every push, and a weekly dependency
-  vulnerability scan. Design decisions are recorded as [ADRs](docs/decisions/).
+  checks, tests and secret scanning on every push, a dependency vulnerability scan
+  whenever dependencies change (and weekly), and a security audit of the workflows
+  themselves. Design decisions are recorded as [ADRs](docs/decisions/).
 - **Reusable by design.** The research topic is a config file. A second study on
   cervical-spine fracture AI reuses the same pipeline with an added PubMed source and
   no changes to the modelling code.
