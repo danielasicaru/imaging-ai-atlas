@@ -6,6 +6,9 @@ import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+from imaging_ai_atlas.story.dynamics import MIN_YEAR_TOTAL
+from imaging_ai_atlas.story.eda import category_share_by_year, largest_topics, papers_per_year
+
 # Importing plots also selects the headless Agg backend (see the note there).
 from imaging_ai_atlas.story.plots import (
     BLUE,
@@ -48,7 +51,9 @@ def _finish(
     save_figure(fig, save_path)
 
 
-def plot_papers_per_year(counts: pd.Series, save_path: Path, last_year_partial: bool) -> None:
+def plot_papers_per_year(
+    counts: pd.Series, save_path: Path, last_year_partial: bool, title: str
+) -> None:
     """Bar per year. With `last_year_partial` (the snapshot ends partway through its last
     year), that bar is drawn in grey and labelled so its lower count doesn't read as a
     decline.
@@ -89,7 +94,7 @@ def plot_papers_per_year(counts: pd.Series, save_path: Path, last_year_partial: 
             color=_INK,
         )
 
-    _finish(fig, ax, "Medical-imaging AI papers on arXiv per year", "Papers", "y", save_path)
+    _finish(fig, ax, title, "Papers", "y", save_path)
 
 
 def plot_corpus_funnel(stages: list[tuple[str, int]], save_path: Path) -> None:
@@ -153,7 +158,7 @@ def plot_category_share(share: pd.DataFrame, save_path: Path) -> None:
     _finish(
         fig,
         ax,
-        "Which arXiv categories the papers are filed under",
+        "Which categories the papers are filed under",
         "Share of that year's papers",
         "y",
         save_path,
@@ -171,3 +176,45 @@ def plot_largest_topics(ranked: pd.DataFrame, save_path: Path) -> None:
     _style(ax, value_axis="x")
     ax.set_xlim(right=max(sizes) * 1.12)
     _finish(fig, ax, f"The {len(labels)} largest research themes", "Papers", "x", save_path)
+
+
+def build_eda_figures(
+    filtered: pd.DataFrame,
+    years: list[int],
+    corpus_label: str,
+    raw_count: int,
+    topics: list[int],
+    topic_labels: dict[int, str],
+    figures_dir: Path,
+    min_year_total: int = MIN_YEAR_TOTAL,
+) -> None:
+    """Write the four corpus charts to `figures_dir`: papers per year, the filter funnel,
+    category share over time, and the largest themes. `filtered` is the in-scope corpus
+    (needs `categories`), `years` each paper's year, `corpus_label` the topic domain's
+    display name, `raw_count` the corpus size before filtering, and `topics` each
+    paper's topic (-1 = none).
+    """
+    # The snapshot ends partway through its last year.
+    plot_papers_per_year(
+        papers_per_year(pd.Series(years)),
+        figures_dir / "papers_per_year.png",
+        last_year_partial=True,
+        title=f"{corpus_label} papers per year",
+    )
+    plot_corpus_funnel(
+        [
+            ("All ingested papers", raw_count),
+            (f"{corpus_label} (filter)", len(filtered)),
+            ("Assigned to a research theme", sum(t != -1 for t in topics)),
+        ],
+        figures_dir / "corpus_funnel.png",
+    )
+    share = category_share_by_year(
+        years, filtered["categories"].tolist(), top_n=4, min_year_total=min_year_total
+    )
+    # A small corpus may have no year with enough papers for a share to mean anything.
+    if not share.empty:
+        plot_category_share(share, figures_dir / "category_share.png")
+    plot_largest_topics(
+        largest_topics(topics, topic_labels, n=12), figures_dir / "largest_themes.png"
+    )

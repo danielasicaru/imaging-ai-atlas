@@ -12,3 +12,8 @@ def load_topic_labels(labeling_sample_path: Path) -> dict[int, str]:
     df = pd.read_csv(labeling_sample_path)
     coherent = df[df["coherent"].astype(str).str.strip().str.lower() == "yes"]
     return dict(zip(coherent["topic_id"], coherent["suggested_label"], strict=True))
+
+
+def topic_label(topic_id: int, topic_labels: dict[int, str]) -> str:
+    """A topic's human-reviewed label, or a generic "Topic N" when it has none."""
+    return topic_labels.get(topic_id, f"Topic {topic_id}")

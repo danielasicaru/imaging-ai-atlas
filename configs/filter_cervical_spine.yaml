@@ -3,6 +3,7 @@
 # a different YAML, per data/filter.py's FilterConfig design (no code change needed to
 # point the pipeline at a different research topic).
 name: cervical-spine-fracture
+display_name: Cervical-spine fracture AI
 
 # arXiv categories reused from the medical-imaging config, plus PubMed MeSH headings that
 # would plausibly appear on a cervical-spine-fracture AI paper. A paper matches if *any*

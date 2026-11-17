@@ -1,6 +1,11 @@
 import pandas as pd
 
-from imaging_ai_atlas.story.eda import category_share_by_year, largest_topics, papers_per_year
+from imaging_ai_atlas.story.eda import (
+    category_share_by_year,
+    largest_topics,
+    papers_per_year,
+    topic_mix_by_source,
+)
 
 
 def test_papers_per_year_counts_and_fills_empty_years_with_zero() -> None:
@@ -49,3 +54,16 @@ def test_largest_topics_falls_back_to_topic_id_without_a_label() -> None:
     ranked = largest_topics([7, 7], {}, n=5)
 
     assert ranked["label"].tolist() == ["Topic 7"]
+
+
+def test_topic_mix_by_source_gives_counts_and_within_source_shares() -> None:
+    # Shares are within each source; papers outside every theme keep their own row.
+    topics = [0, 0, 1, -1, 0, 1, 1, 1]
+    sources = ["arxiv", "arxiv", "arxiv", "arxiv", "pubmed", "pubmed", "pubmed", "pubmed"]
+
+    mix = topic_mix_by_source(topics, sources, {0: "Fractures", 1: "Maturation"})
+
+    assert mix.loc["Fractures", ("count", "arxiv")] == 2
+    assert mix.loc["Fractures", ("share", "arxiv")] == 0.5
+    assert mix.loc["Maturation", ("share", "pubmed")] == 0.75
+    assert mix.loc["No clear theme", ("count", "pubmed")] == 0

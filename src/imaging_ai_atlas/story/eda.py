@@ -1,5 +1,7 @@
 import pandas as pd
 
+from imaging_ai_atlas.story.labels import topic_label
+
 
 def papers_per_year(years: pd.Series) -> pd.Series:
     """Paper count per year, with every year between the first and last present (0
@@ -34,5 +36,20 @@ def largest_topics(topics: list[int], topic_labels: dict[int, str], n: int) -> p
     outlier bucket is skipped: it holds papers that fit no theme, so it isn't one.
     """
     sizes = pd.Series([t for t in topics if t != -1]).value_counts().head(n)
-    labels = [topic_labels.get(int(t), f"Topic {t}") for t in sizes.index]
+    labels = [topic_label(int(t), topic_labels) for t in sizes.index]
     return pd.DataFrame({"label": labels, "size": sizes.to_numpy()})
+
+
+def topic_mix_by_source(
+    topics: list[int], sources: list[str], topic_labels: dict[int, str]
+) -> pd.DataFrame:
+    """Papers per theme for each source, as raw counts and as a share of that source's
+    papers (columns `("count", source)` and `("share", source)`, one row per theme).
+    Shares are taken within each source because sources can differ a lot in size; the
+    counts stay alongside so a share built on a handful of papers is visible as such.
+    Topic -1 is reported as "No clear theme" rather than dropped.
+    """
+    labels = ["No clear theme" if t == -1 else topic_label(t, topic_labels) for t in topics]
+    counts = pd.crosstab(pd.Series(labels, name="theme"), pd.Series(sources, name="source"))
+    shares = counts / counts.sum()
+    return pd.concat({"count": counts, "share": shares}, axis=1)

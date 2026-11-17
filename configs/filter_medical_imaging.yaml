@@ -2,6 +2,7 @@
 # precision/recall numbers this rule was measured against, and ADR 0005 for why this is a
 # config file rather than hardcoded constants.
 name: medical-imaging
+display_name: Medical-imaging AI
 
 # Categories where a medical-imaging AI paper could plausibly live. Deliberately broad -
 # this is the "could this paper be relevant at all" net, not the final answer. cs.CV alone

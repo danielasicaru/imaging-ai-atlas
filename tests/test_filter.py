@@ -107,3 +107,22 @@ def test_filter_config_rejects_empty_keyword_patterns() -> None:
     # "category scope only" rather than raising, if this weren't rejected.
     with pytest.raises(ValidationError):
         FilterConfig(name="broken", category_scope=["eess.IV"], keyword_patterns=[])
+
+
+def test_filter_config_display_name_defaults_to_name() -> None:
+    # Chart titles and labels use display_name; a config that doesn't set one still
+    # gets a readable label instead of a crash.
+    config = FilterConfig(name="spine", category_scope=["eess.IV"], keyword_patterns=["MRI"])
+
+    assert config.display_name == "spine"
+
+
+def test_filter_config_display_name_can_be_set() -> None:
+    config = FilterConfig(
+        name="spine",
+        display_name="Cervical-spine fracture AI",
+        category_scope=["eess.IV"],
+        keyword_patterns=["MRI"],
+    )
+
+    assert config.display_name == "Cervical-spine fracture AI"

@@ -21,7 +21,7 @@ flowchart LR
     filt --> emb["atlas embed: sentence embeddings, cached"]:::model
     emb --> top["atlas topics: UMAP + HDBSCAN + c-TF-IDF, compare variants"]:::model
     top --> reg["atlas register-topic: fit final model, human label check, register to MLflow"]:::model
-    reg --> sty["atlas story: 2D map + topic dynamics over time"]:::story
+    reg --> sty["atlas story: 2D map, topic dynamics and corpus charts"]:::story
 ```
 
 | Stage | Command | What it does |
@@ -34,7 +34,7 @@ flowchart LR
 | Embeddings | `atlas embed` | sentence-transformers, cached by model + revision + data hash, Matryoshka-dimension ablation — ADR 0004 |
 | Topic model comparison | `atlas topics` | UMAP (5D) → HDBSCAN → CountVectorizer → c-TF-IDF, compared across embedding variants (diversity, NPMI, outlier rate, seed stability) |
 | Topic model registration | `atlas register-topic` | fits the chosen primary model once, registers it as a standard MLflow artifact, writes a human coherence-check sample for the largest topics |
-| Story | `atlas story` | 2D topic map + topic-share-over-time charts, written to `reports/figures/` |
+| Story | `atlas story` | 2D topic map, topic-share-over-time chart, and the four corpus charts (papers per year, filter funnel, category share, largest themes), written to `reports/figures/`; for a corpus combining sources, also a theme-mix-by-source CSV (`--source-mix-path`) |
 
 `ingest`, `fetch-pubmed`, and `combine-corpora` all default their output path to
 `data/interim/papers.parquet` — the same default `embed`/`topics`/`register-topic`/`story`
@@ -53,7 +53,7 @@ atlas ingest arxiv --raw-path data/raw/arxiv-metadata-oai-snapshot.json
 atlas embed           # cache sentence embeddings for every configured model/dims
 atlas topics          # compare topic models across embedding variants
 atlas register-topic  # fit + register the chosen primary topic model
-atlas story           # build the 2D topic map and topic-dynamics charts
+atlas story           # build the 2D topic map, topic dynamics and corpus charts
 ```
 
 The last four accept `--filter-config-path` to point at a different research-topic domain (see

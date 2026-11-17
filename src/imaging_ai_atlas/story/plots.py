@@ -7,6 +7,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from imaging_ai_atlas.story.dynamics import MIN_YEAR_TOTAL
+from imaging_ai_atlas.story.labels import topic_label
 
 # Figures only ever get saved to a file, never shown interactively - force the
 # non-interactive Agg backend so this works headless (CI, no Tk/X11) without needing a
@@ -156,7 +157,7 @@ def plot_topic_map(
         mask = topics_arr == topic_id
         color = _highlight_color(i)
         ax.scatter(coords[mask, 0], coords[mask, 1], c=[color], s=6, alpha=0.8, linewidths=0)
-        label = topic_labels.get(topic_id, f"Topic {topic_id}")
+        label = topic_label(topic_id, topic_labels)
         cx, cy = centroids[i]
         lx, ly = label_positions[i]
         needs_leader = (lx, ly) != (cx, cy)
@@ -241,7 +242,7 @@ def plot_topic_dynamics(
         all_years.extend(years)
         color = _highlight_color(i)
         ax.plot(years, shares, color=color, linewidth=2)
-        label = topic_labels.get(topic_id, f"Topic {topic_id}")
+        label = topic_label(topic_id, topic_labels)
         entries.append((color, label, years[-1], shares[-1]))
 
     max_year = max(all_years) if all_years else 0

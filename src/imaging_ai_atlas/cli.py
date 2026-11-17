@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
 import typer
 
 from imaging_ai_atlas.data.arxiv import ArxivSource
@@ -20,6 +21,8 @@ from imaging_ai_atlas.story.dynamics import (
     topic_share_by_year,
     topic_volume_by_year,
 )
+from imaging_ai_atlas.story.eda import topic_mix_by_source
+from imaging_ai_atlas.story.eda_plots import build_eda_figures
 from imaging_ai_atlas.story.labels import load_topic_labels
 from imaging_ai_atlas.story.map2d import project_2d
 from imaging_ai_atlas.story.plots import plot_topic_dynamics, plot_topic_map
@@ -297,6 +300,7 @@ def story(
     labeling_sample_path: Path = Path("data/interim/topic_labeling_sample.csv"),
     figures_dir: Path = Path("reports/figures"),
     dynamics_summary_path: Path = Path("reports/topic_dynamics_summary.csv"),
+    source_mix_path: Path = Path("reports/topic_mix_by_source.csv"),
     n_bootstrap_iterations: int = 1000,
     model_name: str = "nomic-ai/nomic-embed-text-v1.5",
     revision: str = "e9b6763023c676ca8431644204f50c2b100d9aab",
@@ -305,10 +309,11 @@ def story(
     dims: int = 64,
     seed: int = 0,
 ) -> None:
-    """Build the 2D topic map and topic-dynamics-over-time charts from the registered
-    nomic@64 topic model's saved assignments, plus a bootstrapped rising/fading topic
-    ranking written to `dynamics_summary_path`. Requires `atlas register-topic` to have
-    run first.
+    """Build every figure the README shows - the 2D topic map, topic dynamics over time,
+    and the corpus charts from `build_eda_figures` - from the registered nomic@64 topic
+    model's saved assignments, plus a
+    bootstrapped rising/fading topic ranking written to `dynamics_summary_path`. Requires
+    `atlas register-topic` to have run first.
     """
     _require_corpus_inputs(papers_path, filter_config_path)
     _require_exists(
@@ -359,7 +364,24 @@ def story(
     figures_dir.mkdir(parents=True, exist_ok=True)
     plot_topic_map(coords, topics, topic_labels, figures_dir / "topic_map.png")
     plot_topic_dynamics(share, topic_labels, figures_dir / "topic_dynamics.png")
+    build_eda_figures(
+        filtered,
+        years=years,
+        corpus_label=load_filter_config(filter_config_path).display_name,
+        raw_count=pq.ParquetFile(papers_path).metadata.num_rows,  # footer only, no data read
+        topics=topics,
+        topic_labels=topic_labels,
+        figures_dir=figures_dir,
+    )
     typer.echo(f"Wrote figures to {figures_dir}")
+
+    # Only meaningful for a corpus combining sources (e.g. arXiv preprints + PubMed
+    # journal papers): how each source's papers spread across the themes.
+    sources = filtered["source"].tolist()
+    if len(set(sources)) > 1:
+        source_mix_path.parent.mkdir(parents=True, exist_ok=True)
+        topic_mix_by_source(topics, sources, topic_labels).to_csv(source_mix_path)
+        typer.echo(f"Wrote theme mix by source to {source_mix_path}")
 
 
 if __name__ == "__main__":

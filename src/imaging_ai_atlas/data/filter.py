@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 
 class FilterConfig(BaseModel):
@@ -15,8 +15,16 @@ class FilterConfig(BaseModel):
     """
 
     name: str
+    # Human-readable label for chart titles; `name` is a slug used in file names.
+    display_name: str = ""
     category_scope: list[str]
     keyword_patterns: list[str]
+
+    @model_validator(mode="after")
+    def _default_display_name(self) -> "FilterConfig":
+        if not self.display_name:
+            self.display_name = self.name
+        return self
 
     @field_validator("category_scope", "keyword_patterns")
     @classmethod
