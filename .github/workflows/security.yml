@@ -17,12 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read # the action lists a PR's commits to decide what to scan
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          # Needed for PR scans and for the action's account lookup (unauthenticated, it gets rate-limited).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PR comments would need pull-requests: write; findings still fail the job.
+          GITLEAKS_ENABLE_COMMENTS: "false"
 
   osv-scanner:
     if: >-
