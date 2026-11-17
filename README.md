@@ -113,8 +113,9 @@ broadly):
 
 ## Repository conventions
 
-- No raw data is committed. `data/` is git-ignored; datasets are versioned with DVC and documented in each
-  stage's ADR.
+- No raw data is committed. `data/` is git-ignored; each raw snapshot is pinned by its SHA-256 in
+  `data/raw/SHA256SUMS` (verify with `cd data/raw && sha256sum -c SHA256SUMS`) and documented in its
+  stage's ADR — see ADR 0007.
 - Decisions with lasting consequences are recorded as ADRs under `docs/decisions/`.
 
 ## License

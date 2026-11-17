@@ -30,9 +30,8 @@ dependencies = [
     "scikit-learn>=1.4",
     "gensim>=4.3",            # NPMI coherence (CoherenceModel, c_npmi)
     "scipy>=1.12",            # Hungarian topic matching (linear_sum_assignment)
-    # tracking, data versioning, story
+    # tracking, story
     "mlflow>=2.12",
-    "dvc>=3.50",
     "matplotlib>=3.9",
 ]
 
@@ -129,12 +128,12 @@ exclude_lines = ["if __name__ == .__main__.:"]
 known_first_party = ["imaging_ai_atlas"]
 
 [tool.deptry.per_rule_ignores]
-# DEP002 ("defined but unused"): pyarrow/dvc are CLI tools or implicit engines (pandas uses
-# pyarrow under the hood for Parquet without a direct import), never imported by name.
+# DEP002 ("defined but unused"): pyarrow is an implicit engine (pandas uses it under the
+# hood for Parquet without a direct import), never imported by name.
 # The rest are declared ahead of the pipeline stage that imports them, and the dev extras
 # aren't imported by src/ at all. Shrink this list as each stage starts using its dependency.
 DEP002 = [
-    "pyarrow", "dvc",
+    "pyarrow",
     "torch", "bertopic",
     "umap-learn", "hdbscan", "scikit-learn",
     # einops: required by nomic-embed-text-v1.5's trust_remote_code module, never imported

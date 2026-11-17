@@ -11,7 +11,7 @@ dist/
 .venv/
 /data/**
 !/data/**/
-!/data/**/*.dvc
+!/data/raw/SHA256SUMS
 mlflow.db
 mlruns/
 .claude/

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Refuses to stage large raw-data files directly; they belong in DVC. See README.
+# Refuses to stage large raw-data files directly. See README.
 set -eu
 
 staged_list=$(mktemp)
@@ -15,7 +15,7 @@ while IFS= read -r f; do
     esac
     size=$(wc -c < "$f")
     if [ "$size" -gt 1048576 ]; then
-        echo "refusing to commit $f (>1MB): use DVC instead" >&2
+        echo "refusing to commit $f (>1MB): raw data stays out of git (see data/raw/SHA256SUMS)" >&2
         status=1
     fi
 done < "$staged_list"

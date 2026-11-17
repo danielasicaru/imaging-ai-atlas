@@ -19,6 +19,7 @@ Two things needed to be pinned down before `ingest` was built:
   A `Source` protocol keeps a future second source (e.g. PubMed) pluggable without reworking the pipeline.
 - Ship **code + derived aggregates + arXiv IDs** in the repo. Raw abstracts and the full snapshot are
   **not** committed — they are pulled via the documented reproduction path and tracked with DVC locally.
+  (DVC was later replaced by committed SHA-256 checksums — see ADR 0007.)
 - No claims of arXiv endorsement anywhere in the repo or report.
 
 ## Verification
